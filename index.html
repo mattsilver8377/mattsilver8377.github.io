@@ -1405,6 +1405,14 @@ const _store = {
   set(k,v) { try { localStorage.setItem(k,v); } catch(e) {} },
   del(k) { try { localStorage.removeItem(k); } catch(e) {} }
 };
+
+// Global error handler — shows errors on screen so we can diagnose without DevTools
+window.onerror = function(msg, src, line) {
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;font-size:12px;font-family:monospace;z-index:9999;';
+  d.textContent = 'JS ERROR line '+line+': '+msg;
+  document.body.appendChild(d);
+};
 // ==================== DATA ENGINE ====================
 
 // South Coast UK beaches face SOUTH onto the English Channel.
@@ -1415,7 +1423,64 @@ const _store = {
 
 // Built-in base locations — all are removable by the user
 // Only Eastbourne is shown by default as an example
-const LOCATIONS = {};
+const LOCATIONS = {
+  eastbourne: {
+    key:'eastbourne', name:"Eastbourne Beach",
+    lat:50.768, lon:0.290, waterTemp:12,
+    sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.8], beachBearing:150,
+    crossDirs:['SW','WSW','W','WNW','SE','ESE','SSW'], onDirs:['S','SSW','SSE'],
+    offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','WSW','W','SE','S','SSW','SSE','ESE'],
+  },
+  royalparade: {
+    key:'royalparade', name:"Royal Parade",
+    lat:50.77758, lon:0.30778, waterTemp:12,
+    sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.8], beachBearing:145,
+    crossDirs:['SW','SSW','ENE','E','ESE'], onDirs:['S','SE','SSE'],
+    offDirs:['N','NNE','NE','NW','WNW','W','NNW'], allWindDirs:['SW','SSW','SE','ESE','S','E'],
+  },
+  pevensey: {
+    key:'pevensey', name:"Pevensey Bay",
+    lat:50.820, lon:0.358, waterTemp:12,
+    sunrise:"06:27", sunset:"18:51", tideRange:[1.2,6.5], beachBearing:160,
+    crossDirs:['SW','WSW','W','WNW','SE','ESE','SSW'], onDirs:['S','SSW','SSE'],
+    offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','WSW','W','SE','S','SSW','SSE','ESE'],
+  },
+  rye: {
+    key:'rye', name:"Rye Harbour",
+    lat:50.920, lon:0.760, waterTemp:12,
+    sunrise:"06:25", sunset:"18:49", tideRange:[2.0,7.2], beachBearing:135,
+    crossDirs:['SW','WSW','W','SE','ESE','SSW','SSE'], onDirs:['S','SSE','SSW'],
+    offDirs:['N','NNE','NE','NNW','NW'], allWindDirs:['SW','WSW','SE','SSE','S','SSW','W','ESE'],
+  },
+  bewlwater: {
+    key:'bewlwater', name:"Bewl Water",
+    lat:51.065, lon:0.390, waterTemp:11,
+    sunrise:"06:26", sunset:"18:50", tideRange:[0,0], beachBearing:null,
+    crossDirs:['SW','WSW','W','NW','NNW','S','SE','NE','N','E'], onDirs:[], offDirs:[],
+    allWindDirs:['SW','W','NW','SSW','SE','NE','N','S','WSW'],
+  },
+  cooden: {
+    key:'cooden', name:"Cooden Beach",
+    lat:50.840, lon:0.440, waterTemp:12,
+    sunrise:"06:27", sunset:"18:51", tideRange:[1.1,6.6], beachBearing:155,
+    crossDirs:['SW','WSW','W','WNW','SE','ESE','SSW'], onDirs:['S','SSW','SSE'],
+    offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','WSW','W','SE','S','SSW','SSE','ESE'],
+  },
+  mudeford: {
+    key:'mudeford', name:"Mudeford Quay",
+    lat:50.723, lon:-1.742, waterTemp:13,
+    sunrise:"06:35", sunset:"18:58", tideRange:[0.8,1.9], beachBearing:170,
+    crossDirs:['SW','WSW','W','WNW','SE','ESE','SSW'], onDirs:['S','SSE','SSW'],
+    offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','WSW','W','SE','ESE','S','SSW','SSE'],
+  },
+  seaford: {
+    key:'seaford', name:"Seaford Beach",
+    lat:50.770, lon:0.100, waterTemp:12,
+    sunrise:"06:29", sunset:"18:53", tideRange:[1.0,6.7], beachBearing:160,
+    crossDirs:['SW','WSW','W','WNW','SE','ESE','SSW'], onDirs:['S','SSW','SSE'],
+    offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','WSW','W','SE','S','SSW','SSE','ESE'],
+  },
+};
 
 // Default example location shown on first install
 const EXAMPLE_LOCATIONS = {
@@ -1815,13 +1880,11 @@ function changeLocation() {
 }
 
 function renderAll() {
-  renderDate();
-  renderBanner();
-  renderStats();
-  renderDayTabs();
-  renderForecastTable();
-  renderTideChart();
-  initWindMap();
+  const fns = [renderDate, renderBanner, renderStats, renderDayTabs, renderForecastTable, renderTideChart, initWindMap];
+  fns.forEach(fn => {
+    try { fn(); }
+    catch(e) { console.error('[WingCast] Error in ' + fn.name + ':', e.message, e.stack); }
+  });
 }
 
 function renderDate() {
