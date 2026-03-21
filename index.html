@@ -858,6 +858,15 @@
     cursor: pointer;
     padding: 0 4px;
   }
+  /* Compass popup — transparent Leaflet popup */
+  .compass-popup .leaflet-popup-content-wrapper {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .compass-popup .leaflet-popup-content { margin: 0 !important; }
+  .compass-popup .leaflet-popup-tip-container { display: none !important; }
 </style>
 </head>
 <body>
@@ -1354,25 +1363,24 @@
   <!-- Map fills remaining space — compass overlays on top of it after pin drop -->
   <div style="position:relative;flex:1;min-height:0;">
     <div id="addLocMap" style="width:100%;height:100%;"></div>
-    <!-- Compass overlay — hidden until pin dropped -->
-    <div id="compassOverlay" style="display:none;position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(4,13,26,0.92);border:1px solid rgba(0,229,160,0.4);border-radius:16px;padding:14px 20px;z-index:1000;min-width:280px;backdrop-filter:blur(8px);">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--wind-green);letter-spacing:2px;text-align:center;margin-bottom:10px;">STEP 2 — DRAG THE ARROW TO POINT TOWARD THE WATER</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:20px;">
-        <div id="compassContainer" style="width:110px;height:110px;border-radius:50%;background:rgba(91,196,245,0.08);border:2px solid rgba(91,196,245,0.3);position:relative;cursor:grab;touch-action:none;flex-shrink:0;user-select:none;">
-          <div style="position:absolute;top:4px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">N</div>
-          <div style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">S</div>
-          <div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">W</div>
-          <div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">E</div>
-          <div id="compassArrow" style="position:absolute;top:50%;left:50%;width:4px;height:40px;background:linear-gradient(to top,rgba(0,229,160,0.2),var(--wind-green));border-radius:2px 2px 0 0;transform-origin:bottom center;transform:translateX(-50%) translateY(-100%) rotate(180deg);pointer-events:none;">
-            <div style="position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid var(--wind-green);"></div>
+    <!-- Compass overlay — positioned over pin via JS, semi-transparent -->
+    <div id="compassOverlay" style="display:none;position:absolute;z-index:1000;transform:translate(-50%,-50%);pointer-events:none;">
+      <div style="pointer-events:all;">
+        <div id="compassContainer" style="width:150px;height:150px;border-radius:50%;background:rgba(4,13,26,0.5);border:2px solid rgba(0,229,160,0.7);position:relative;cursor:grab;touch-action:none;user-select:none;backdrop-filter:blur(3px);box-shadow:0 0 20px rgba(0,229,160,0.2);">
+          <div style="position:absolute;top:7px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.8);font-weight:700;">N</div>
+          <div style="position:absolute;bottom:7px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.8);font-weight:700;">S</div>
+          <div style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.8);font-weight:700;">W</div>
+          <div style="position:absolute;right:9px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.8);font-weight:700;">E</div>
+          <div id="compassArrow" style="position:absolute;top:50%;left:50%;width:4px;height:54px;background:linear-gradient(to top,rgba(0,229,160,0.2),var(--wind-green));border-radius:2px 2px 0 0;transform-origin:bottom center;transform:translateX(-50%) translateY(-100%) rotate(180deg);pointer-events:none;">
+            <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:13px solid var(--wind-green);"></div>
           </div>
-          <div style="position:absolute;top:50%;left:50%;width:10px;height:10px;background:var(--wind-green);border-radius:50%;transform:translate(-50%,-50%);"></div>
+          <div style="position:absolute;top:50%;left:50%;width:8px;height:8px;background:var(--wind-green);border-radius:50%;transform:translate(-50%,-50%);z-index:1;"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);margin-top:24px;text-align:center;pointer-events:none;margin-top:28px;">
+            <div id="compassBearingLabel" style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--wind-green);line-height:1;">S</div>
+            <div id="compassBearingDeg" style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:rgba(255,255,255,0.6);">180°</div>
+          </div>
         </div>
-        <div style="text-align:center;">
-          <div id="compassBearingLabel" style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--wind-green);line-height:1;">S</div>
-          <div id="compassBearingDeg" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-muted);">180°</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Beach faces this way<br>Offshore = opposite</div>
-        </div>
+        <div style="margin-top:6px;background:rgba(4,13,26,0.85);border:1px solid rgba(0,229,160,0.5);border-radius:6px;padding:4px 10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--wind-green);letter-spacing:1px;text-align:center;white-space:nowrap;">DRAG ARROW → TOWARD WATER</div>
       </div>
     </div>
   </div>
@@ -1397,12 +1405,6 @@ const _store = {
   set(k,v) { try { localStorage.setItem(k,v); } catch(e) {} },
   del(k) { try { localStorage.removeItem(k); } catch(e) {} }
 };
-
-// Force clear old service worker caches
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-}
 // ==================== DATA ENGINE ====================
 
 // South Coast UK beaches face SOUTH onto the English Channel.
@@ -2658,10 +2660,8 @@ function openAddLocation() {
 }
 
 function placePinAt(lat, lng) {
-  // Remove existing marker
   if (addLocMarker) { addLocMap.removeLayer(addLocMarker); addLocMarker = null; }
 
-  // Custom green pin icon
   const pinIcon = L.divIcon({
     html: `<div style="width:28px;height:36px;position:relative;">
       <svg viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg">
@@ -2669,31 +2669,57 @@ function placePinAt(lat, lng) {
         <circle cx="14" cy="14" r="5" fill="#040d1a"/>
       </svg>
     </div>`,
-    className: '',
-    iconSize: [28, 36],
-    iconAnchor: [14, 36],
+    className: '', iconSize: [28, 36], iconAnchor: [14, 36],
   });
 
   addLocMarker = L.marker([lat, lng], { icon: pinIcon, draggable: true }).addTo(addLocMap);
 
-  // Update coords on drag
   addLocMarker.on('dragend', function() {
     const pos = addLocMarker.getLatLng();
     updatePinCoords(pos.lat, pos.lng);
+    addLocMarker.openPopup();
   });
 
   updatePinCoords(lat, lng);
 
-  // Update instruction to step 2
   const instr = document.getElementById('addLocInstruction');
-  if(instr) instr.textContent = 'STEP 1 DONE ✓ — NOW SET THE BEACH DIRECTION BELOW';
+  if(instr) instr.textContent = 'STEP 1 DONE ✓ — DRAG THE COMPASS ARROW TO POINT TOWARD THE WATER';
 
-  // Show compass overlay on the map
-  const overlay = document.getElementById('compassOverlay');
-  if(overlay) overlay.style.display = 'block';
+  // Compass centred ON the pin — offset[1] = half compass height so it centres vertically
+  const compassHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div id="compassContainer" style="width:150px;height:150px;border-radius:50%;background:rgba(4,13,26,0.45);border:2.5px solid rgba(0,229,160,0.75);position:relative;cursor:grab;touch-action:none;user-select:none;box-shadow:0 0 24px rgba(0,229,160,0.25);">
+        <div style="position:absolute;top:7px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.85);font-weight:700;">N</div>
+        <div style="position:absolute;bottom:7px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.85);font-weight:700;">S</div>
+        <div style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.85);font-weight:700;">W</div>
+        <div style="position:absolute;right:9px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,0.85);font-weight:700;">E</div>
+        <div id="compassArrow" style="position:absolute;top:50%;left:50%;width:4px;height:54px;background:linear-gradient(to top,rgba(0,229,160,0.2),#00e5a0);border-radius:2px 2px 0 0;transform-origin:bottom center;transform:translateX(-50%) translateY(-100%) rotate(180deg);pointer-events:none;">
+          <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:13px solid #00e5a0;"></div>
+        </div>
+        <div style="position:absolute;top:50%;left:50%;width:8px;height:8px;background:#00e5a0;border-radius:50%;transform:translate(-50%,-50%);z-index:2;"></div>
+        <div style="position:absolute;bottom:28px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;">
+          <div id="compassBearingLabel" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#00e5a0;line-height:1;">S</div>
+          <div id="compassBearingDeg" style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:rgba(255,255,255,0.6);">180°</div>
+        </div>
+      </div>
+      <div style="background:rgba(4,13,26,0.8);border:1px solid rgba(0,229,160,0.5);border-radius:6px;padding:4px 12px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:#00e5a0;letter-spacing:1px;white-space:nowrap;">DRAG ARROW TOWARD THE WATER</div>
+    </div>`;
 
-  // Init compass if not already done
-  initCompass();
+  const popup = L.popup({
+    offset: [0, -111], // centres compass circle on pin (150px / 2 + 36px pin height - tip)
+    closeButton: false,
+    autoClose: false,
+    closeOnClick: false,
+    className: 'compass-popup',
+    maxWidth: 180,
+  }).setContent(`<div style="background:transparent;">${compassHTML}</div>`);
+
+  addLocMarker.bindPopup(popup).openPopup();
+  setTimeout(() => initCompass(), 100);
+}
+
+  // Init compass drag after popup renders
+  setTimeout(() => initCompass(), 100);
 }
 
 function updatePinCoords(lat, lng) {
