@@ -3468,10 +3468,8 @@ async function submitFeedback() {
 
   try {
     // Try Web3Forms (free, no backend needed) — user needs to set their access key
-    const accessKey = profile.feedbackKey || 'YOUR_WEB3FORMS_KEY';
-    if (accessKey === 'YOUR_WEB3FORMS_KEY') {
-      // Fallback: just log it and show success (configure key in profile)
-      console.log('Feedback (no key set):', payload);
+    const accessKey = profile.feedbackKey || '2881594c-b59f-4752-ab30-7917fc2df4f3';
+    if (!accessKey) {
       throw new Error('no_key');
     }
     await fetch('https://api.web3forms.com/submit', {
