@@ -1351,29 +1351,15 @@
   <div id="addLocInstruction" style="padding:10px 16px;background:rgba(0,229,160,0.08);border-bottom:1px solid rgba(0,229,160,0.2);font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--wind-green);letter-spacing:1px;flex-shrink:0;text-align:center;">
     STEP 1 — TAP THE MAP TO DROP A PIN ON YOUR LAUNCH SPOT
   </div>
-  <!-- Map fills remaining space — compass overlays on top of it after pin drop -->
+  <!-- Map fills remaining space — direction arrow overlays on pin after drop -->
   <div style="position:relative;flex:1;min-height:0;">
     <div id="addLocMap" style="width:100%;height:100%;"></div>
-    <!-- Compass overlay — hidden until pin dropped -->
-    <div id="compassOverlay" style="display:none;position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(4,13,26,0.92);border:1px solid rgba(0,229,160,0.4);border-radius:16px;padding:14px 20px;z-index:1000;min-width:280px;backdrop-filter:blur(8px);">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--wind-green);letter-spacing:2px;text-align:center;margin-bottom:10px;">STEP 2 — DRAG THE ARROW TO POINT TOWARD THE WATER</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:20px;">
-        <div id="compassContainer" style="width:110px;height:110px;border-radius:50%;background:rgba(91,196,245,0.08);border:2px solid rgba(91,196,245,0.3);position:relative;cursor:grab;touch-action:none;flex-shrink:0;user-select:none;">
-          <div style="position:absolute;top:4px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">N</div>
-          <div style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">S</div>
-          <div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">W</div>
-          <div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">E</div>
-          <div id="compassArrow" style="position:absolute;top:50%;left:50%;width:4px;height:40px;background:linear-gradient(to top,rgba(0,229,160,0.2),var(--wind-green));border-radius:2px 2px 0 0;transform-origin:bottom center;transform:translateX(-50%) translateY(-100%) rotate(180deg);pointer-events:none;">
-            <div style="position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid var(--wind-green);"></div>
-          </div>
-          <div style="position:absolute;top:50%;left:50%;width:10px;height:10px;background:var(--wind-green);border-radius:50%;transform:translate(-50%,-50%);"></div>
-        </div>
-        <div style="text-align:center;">
-          <div id="compassBearingLabel" style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--wind-green);line-height:1;">S</div>
-          <div id="compassBearingDeg" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-muted);">180°</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Beach faces this way<br>Offshore = opposite</div>
-        </div>
+    <!-- Direction arrow overlay — shown on map after pin drop, anchored to pin -->
+    <div id="directionHint" style="display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(4,13,26,0.88);border:1px solid rgba(0,229,160,0.4);border-radius:10px;padding:8px 16px;z-index:1000;backdrop-filter:blur(6px);pointer-events:none;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--wind-green);letter-spacing:1px;text-align:center;">
+        DRAG THE GREEN ARROW TO POINT TOWARD THE WATER
       </div>
+      <div id="directionBearingDisplay" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--wind-green);text-align:center;margin-top:2px;letter-spacing:2px;">S · 180°</div>
     </div>
   </div>
   <!-- Bottom panel — name input and save -->
@@ -2628,7 +2614,7 @@ function openAddLocation() {
     const curLoc = getAllLocations()[currentLocation];
     const centre = curLoc ? [curLoc.lat, curLoc.lon] : [51.0, -1.0];
 
-    if (addLocMap) { addLocMap.remove(); addLocMap = null; addLocMarker = null; }
+    if (addLocMap) { addLocMap.remove(); addLocMap = null; addLocMarker = null; dirArrowMarker = null; }
 
     addLocMap = L.map('addLocMap', { center: centre, zoom: 10, zoomControl: true });
 
@@ -2651,43 +2637,161 @@ function openAddLocation() {
   }, 150);
 }
 
-function placePinAt(lat, lng) {
-  // Remove existing marker
-  if (addLocMarker) { addLocMap.removeLayer(addLocMarker); addLocMarker = null; }
+let dirArrowMarker = null;
 
-  // Custom green pin icon
+function placePinAt(lat, lng) {
+  if (addLocMarker) { addLocMap.removeLayer(addLocMarker); addLocMarker = null; }
+  if (dirArrowMarker) { addLocMap.removeLayer(dirArrowMarker); dirArrowMarker = null; }
+
+  // Green pin
   const pinIcon = L.divIcon({
-    html: `<div style="width:28px;height:36px;position:relative;">
+    html: `<div style="width:28px;height:36px;">
       <svg viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg">
         <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#00e5a0" stroke="#040d1a" stroke-width="1.5"/>
         <circle cx="14" cy="14" r="5" fill="#040d1a"/>
       </svg>
     </div>`,
-    className: '',
-    iconSize: [28, 36],
-    iconAnchor: [14, 36],
+    className: '', iconSize: [28,36], iconAnchor: [14,36],
   });
 
   addLocMarker = L.marker([lat, lng], { icon: pinIcon, draggable: true }).addTo(addLocMap);
-
-  // Update coords on drag
+  addLocMarker.on('drag', function() {
+    const pos = addLocMarker.getLatLng();
+    updatePinCoords(pos.lat, pos.lng);
+    updateDirectionArrow(pos.lat, pos.lng, selectedBeachBearing || 180);
+  });
   addLocMarker.on('dragend', function() {
     const pos = addLocMarker.getLatLng();
     updatePinCoords(pos.lat, pos.lng);
   });
 
   updatePinCoords(lat, lng);
+  selectedBeachBearing = 180;
 
-  // Update instruction to step 2
+  // Place draggable direction arrow on the map anchored to pin
+  placeDirectionArrow(lat, lng, 180);
+
+  // Update instructions
   const instr = document.getElementById('addLocInstruction');
-  if(instr) instr.textContent = 'STEP 1 DONE ✓ — NOW SET THE BEACH DIRECTION BELOW';
+  if(instr) instr.textContent = '✓ PIN DROPPED — DRAG THE ARROW TO POINT TOWARD THE WATER';
 
-  // Show compass overlay on the map
-  const overlay = document.getElementById('compassOverlay');
-  if(overlay) overlay.style.display = 'block';
+  // Show bearing hint
+  const hint = document.getElementById('directionHint');
+  if(hint) hint.style.display = 'block';
+}
 
-  // Init compass if not already done
-  initCompass();
+function placeDirectionArrow(lat, lng, bearing) {
+  if (dirArrowMarker) { addLocMap.removeLayer(dirArrowMarker); dirArrowMarker = null; }
+
+  // Calculate tip position ~150m in the bearing direction
+  const dist = 0.0015; // ~150m in degrees
+  const rad = (bearing - 90) * Math.PI / 180;
+  const tipLat = lat + dist * Math.cos((bearing) * Math.PI / 180);
+  const tipLng = lng + dist * Math.sin((bearing) * Math.PI / 180) / Math.cos(lat * Math.PI / 180);
+
+  const arrowIcon = L.divIcon({
+    html: makeDirectionArrowSVG(bearing),
+    className: '',
+    iconSize: [40, 120],
+    iconAnchor: [20, 120], // anchor at base (pin end)
+  });
+
+  dirArrowMarker = L.marker([lat, lng], {
+    icon: arrowIcon,
+    draggable: false,
+    zIndexOffset: 500,
+    interactive: true,
+  }).addTo(addLocMap);
+
+  // Make the arrow draggable by listening to map mouse/touch events when near arrow
+  initMapArrowDrag(lat, lng);
+}
+
+function makeDirectionArrowSVG(bearing) {
+  return `<div style="width:40px;height:120px;position:relative;transform-origin:bottom center;transform:rotate(${bearing}deg);">
+    <svg viewBox="0 0 40 120" xmlns="http://www.w3.org/2000/svg" style="width:40px;height:120px;">
+      <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#00e5a0"/>
+      </marker></defs>
+      <!-- Arrow shaft -->
+      <line x1="20" y1="110" x2="20" y2="20" stroke="#00e5a0" stroke-width="3" stroke-dasharray="6,3" opacity="0.7"/>
+      <!-- Arrowhead -->
+      <polygon points="20,2 12,22 28,22" fill="#00e5a0"/>
+      <!-- Base dot -->
+      <circle cx="20" cy="112" r="5" fill="#00e5a0" opacity="0.5"/>
+    </svg>
+    <div style="position:absolute;top:24px;left:50%;transform:translateX(-50%);background:rgba(4,13,26,0.8);border:1px solid rgba(0,229,160,0.5);border-radius:4px;padding:2px 5px;font-family:'Barlow Condensed',sans-serif;font-size:10px;color:#00e5a0;white-space:nowrap;letter-spacing:1px;">WATER</div>
+  </div>`;
+}
+
+function initMapArrowDrag(pinLat, pinLng) {
+  // Track touch/mouse on the map to allow rotating the arrow
+  const mapEl = document.getElementById('addLocMap');
+  if (!mapEl) return;
+
+  let isDragging = false;
+
+  function startDrag(e) {
+    // Only start if near the arrow
+    isDragging = true;
+    addLocMap.dragging.disable();
+    e.preventDefault();
+  }
+
+  function doDrag(e) {
+    if (!isDragging) return;
+    const rect = mapEl.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    // Get pin pixel position
+    const pinPx = addLocMap.latLngToContainerPoint([pinLat, pinLng]);
+
+    // Calculate angle from pin to finger
+    const dx = clientX - rect.left - pinPx.x;
+    const dy = clientY - rect.top - pinPx.y;
+    let bearing = Math.atan2(dx, -dy) * 180 / Math.PI;
+    if (bearing < 0) bearing += 360;
+    bearing = Math.round(bearing);
+
+    selectedBeachBearing = bearing;
+    updateDirectionArrow(pinLat, pinLng, bearing);
+    e.preventDefault();
+  }
+
+  function endDrag() {
+    isDragging = false;
+    addLocMap.dragging.enable();
+  }
+
+  // Listen on the direction arrow marker element
+  setTimeout(() => {
+    const arrowEl = dirArrowMarker && dirArrowMarker.getElement();
+    if (arrowEl) {
+      arrowEl.addEventListener('mousedown', startDrag);
+      arrowEl.addEventListener('touchstart', startDrag, { passive: false });
+    }
+    mapEl.addEventListener('mousemove', doDrag);
+    mapEl.addEventListener('touchmove', doDrag, { passive: false });
+    mapEl.addEventListener('mouseup', endDrag);
+    mapEl.addEventListener('touchend', endDrag);
+  }, 100);
+}
+
+function updateDirectionArrow(lat, lng, bearing) {
+  if (dirArrowMarker) {
+    dirArrowMarker.setIcon(L.divIcon({
+      html: makeDirectionArrowSVG(bearing),
+      className: '',
+      iconSize: [40, 120],
+      iconAnchor: [20, 120],
+    }));
+  }
+  // Update hint display
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  const idx = Math.round(bearing / 22.5) % 16;
+  const disp = document.getElementById('directionBearingDisplay');
+  if (disp) disp.textContent = dirs[idx] + ' · ' + bearing + '°';
 }
 
 function updatePinCoords(lat, lng) {
@@ -2701,43 +2805,17 @@ function updatePinCoords(lat, lng) {
 
 // ---- COMPASS DRAG ----
 function initCompass() {
-  const container = document.getElementById('compassContainer');
-  if (!container) return;
-  selectedBeachBearing = 180; // default south
-  updateCompassDisplay(180);
-
-  function getAngle(e) {
-    const rect = container.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const dx = clientX - cx;
-    const dy = clientY - cy;
-    let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
-    if (angle < 0) angle += 360;
-    return Math.round(angle);
-  }
-
-  let dragging = false;
-  container.addEventListener('mousedown', () => dragging = true);
-  container.addEventListener('touchstart', (e) => { dragging = true; e.preventDefault(); }, { passive: false });
-  window.addEventListener('mouseup', () => dragging = false);
-  window.addEventListener('touchend', () => dragging = false);
-  window.addEventListener('mousemove', (e) => { if(dragging) { const a=getAngle(e); selectedBeachBearing=a; updateCompassDisplay(a); } });
-  window.addEventListener('touchmove', (e) => { if(dragging) { const a=getAngle(e); selectedBeachBearing=a; updateCompassDisplay(a); e.preventDefault(); } }, { passive: false });
-  container.addEventListener('click', (e) => { const a=getAngle(e); selectedBeachBearing=a; updateCompassDisplay(a); });
+  // Direction now handled by map arrow — see placeDirectionArrow()
+  selectedBeachBearing = 180;
 }
 
 function updateCompassDisplay(bearing) {
-  const arrow = document.getElementById('compassArrow');
-  if (arrow) arrow.style.transform = `translateX(-50%) translateY(-100%) rotate(${bearing}deg)`;
-  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-  const idx = Math.round(bearing / 22.5) % 16;
-  const lbl = document.getElementById('compassBearingLabel');
-  const deg = document.getElementById('compassBearingDeg');
-  if(lbl) lbl.textContent = dirs[idx];
-  if(deg) deg.textContent = bearing + '°';
+  // Direction now handled by updateDirectionArrow()
+  updateDirectionArrow(
+    parseFloat(document.getElementById('newLocLat')?.value||0),
+    parseFloat(document.getElementById('newLocLon')?.value||0),
+    bearing
+  );
 }
 
 function selectBeachDir(bearing, label) {
