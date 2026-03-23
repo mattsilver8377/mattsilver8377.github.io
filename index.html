@@ -943,6 +943,12 @@
         <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#ff3b5c;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">&gt;35 storm</span></div>
       </div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:1px;">Tap a spot to select it</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:2px;">PINS:</span>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:50%;background:#00e5a0;border:2px solid #040d1a;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">Built-in spot</span></div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:50%;background:#5bc4f5;border:2px solid #040d1a;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">My spot</span></div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:50%;background:#f7c948;border:2px solid #040d1a;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">Selected</span></div>
+      </div>
     </div>
   </div>
 
@@ -1393,19 +1399,23 @@ const _store = {
 // Only Eastbourne is shown by default as an example
 const LOCATIONS = {};
 
+// Built-in seeded spots — shown on map but not in user's list unless added
+const BUILTIN_SPOTS = {
+  eastbourne:  { name:"Eastbourne Beach",   lat:50.768,  lon:0.290,   waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.8],  beachBearing:150, crossDirs:['SW','WSW','W','WNW','SE','ESE','SSW'], onDirs:['S','SSW','SSE'], offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','WSW','W','SE','S','SSW','SSE','ESE'], isBuiltin:true },
+  pevensey:    { name:"Pevensey Bay",        lat:50.820,  lon:0.358,   waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.5],  beachBearing:160, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW'], offDirs:['N','NNE','NE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  seaford:     { name:"Seaford Beach",       lat:50.770,  lon:0.100,   waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.5],  beachBearing:155, crossDirs:['SW','WSW','W','SE','ESE','SSW'], onDirs:['S','SSE'], offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','W','SE','S','SSW'], isBuiltin:true },
+  rye:         { name:"Rye / Camber Sands",  lat:50.920,  lon:0.760,   waterTemp:12, sunrise:"06:25", sunset:"18:50", tideRange:[1.0,7.0],  beachBearing:170, crossDirs:['SW','W','WSW','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  cooden:      { name:"Cooden Beach",        lat:50.840,  lon:0.440,   waterTemp:12, sunrise:"06:27", sunset:"18:51", tideRange:[1.0,6.8],  beachBearing:155, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW'], offDirs:['N','NE','NNE','NW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  bewlwater:   { name:"Bewl Water",          lat:51.065,  lon:0.390,   waterTemp:11, sunrise:"06:25", sunset:"18:53", tideRange:[0,0],       beachBearing:0,   crossDirs:['SW','W','NW','SE','NE','S','N','E'], onDirs:[], offDirs:[], allWindDirs:['SW','W','NW','SE','NE','S','N','E'], isBuiltin:true },
+  mudeford:    { name:"Mudeford",            lat:50.723,  lon:-1.742,  waterTemp:12, sunrise:"06:35", sunset:"19:05", tideRange:[0.5,1.8],  beachBearing:180, crossDirs:['SW','W','WSW','SE','ESE'], onDirs:['S','SSW'], offDirs:['N','NE','NNE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  hayling:     { name:"Hayling Island",      lat:50.782,  lon:-0.978,  waterTemp:12, sunrise:"06:32", sunset:"19:00", tideRange:[1.0,4.5],  beachBearing:170, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  portland:    { name:"Portland Harbour",    lat:50.572,  lon:-2.440,  waterTemp:12, sunrise:"06:38", sunset:"19:08", tideRange:[0.5,2.0],  beachBearing:200, crossDirs:['SW','W','WSW','NW','SE'], onDirs:['S','SSW'], offDirs:['N','NE','NNE','E'], allWindDirs:['SW','W','NW','SE','S'], isBuiltin:true },
+  poole:       { name:"Poole Harbour",       lat:50.700,  lon:-1.980,  waterTemp:12, sunrise:"06:36", sunset:"19:06", tideRange:[0.3,1.8],  beachBearing:180, crossDirs:['SW','W','WSW','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+};
+
 // Default example location shown on first install
 const EXAMPLE_LOCATIONS = {
-  eastbourne: {
-    name: "Eastbourne Beach",
-    lat: 50.768, lon: 0.290, waterTemp: 12,
-    sunrise: "06:28", sunset: "18:52", tideRange: [1.0, 6.8],
-    beachBearing: 150,
-    crossDirs: ['SW','WSW','W','WNW','SE','ESE','SSW'],
-    onDirs: ['S','SSW','SSE'],
-    offDirs: ['N','NNE','NE','NNW'],
-    allWindDirs: ['SW','WSW','W','SE','S','SSW','SSE','ESE'],
-    isCustom: true, // removable
-  },
+  eastbourne: { ...BUILTIN_SPOTS.eastbourne, isCustom:true, isBuiltin:false },
 };
 
 const WEATHER_ICONS = {
@@ -2150,21 +2160,25 @@ function renderTideChart() {
 
 // ==================== LEAFLET SATELLITE MAP ====================
 
-const SPOT_COORDS = {
-  royalparade: { lat: 50.77758, lon: 0.30778, label: 'Royal Parade' },
-  eastbourne:  { lat: 50.768, lon: 0.290,  label: 'Eastbourne' },
-  pevensey:    { lat: 50.820, lon: 0.358,  label: 'Pevensey' },
-  rye:         { lat: 50.920, lon: 0.760,  label: 'Rye' },
-  bewlwater:   { lat: 51.065, lon: 0.390,  label: 'Bewl Water' },
-  cooden:      { lat: 50.840, lon: 0.440,  label: 'Cooden' },
-  mudeford:    { lat: 50.723, lon: -1.742, label: 'Mudeford' },
-  seaford:     { lat: 50.770, lon: 0.100,  label: 'Seaford' },
-};
+// Build SPOT_COORDS from BUILTIN_SPOTS
+const SPOT_COORDS = {};
+Object.entries(BUILTIN_SPOTS).forEach(([k,v]) => {
+  SPOT_COORDS[k] = { lat: v.lat, lon: v.lon, label: v.name, isBuiltin: true };
+});
 
 // Keep SPOT_COORDS in sync with LOCATIONS (including custom spots)
 function syncSpotCoords() {
+  // Add builtin spots
+  Object.entries(BUILTIN_SPOTS).forEach(([k,v]) => {
+    SPOT_COORDS[k] = { lat: v.lat, lon: v.lon, label: v.name, isBuiltin: true };
+  });
+  // Add user's custom locations
   Object.entries(LOCATIONS).forEach(([k,v]) => {
-    if (!SPOT_COORDS[k]) SPOT_COORDS[k] = { lat: v.lat, lon: v.lon, label: v.name };
+    if (!v.isBuiltin) SPOT_COORDS[k] = { lat: v.lat, lon: v.lon, label: v.name, isBuiltin: false };
+  });
+  // Remove coords for deleted custom locations
+  Object.keys(SPOT_COORDS).forEach(k => {
+    if (!BUILTIN_SPOTS[k] && !LOCATIONS[k]) delete SPOT_COORDS[k];
   });
 }
 
@@ -2241,8 +2255,9 @@ function makeArrowIcon(spd, dirDeg) {
 
 // Create spot marker as a styled DivIcon
 function makeSpotIcon(locKey, cond, isSelected) {
-  const col = isSelected ? '#f7c948' : '#5bc4f5';
   const spot = SPOT_COORDS[locKey];
+  // Selected = gold, personal spot = sky blue, builtin spot = mint green
+  const col = isSelected ? '#f7c948' : (spot?.isBuiltin ? '#00e5a0' : '#5bc4f5');
   const isMobile = window.innerWidth < 600;
   const scale = isMobile ? 0.85 : 1.0;
 
@@ -2336,6 +2351,11 @@ function updateMapMarkers() {
     // Popup with quick condition summary
     const dirType = getDirType(hData.dir, key);
     const dirLabel = dirType === 'offshore' ? '⚠ OFFSHORE' : dirType === 'onshore' ? 'Onshore' : '✓ Cross-shore';
+    const isInMyList = !!LOCATIONS[key];
+    const isBuiltinSpot = !!BUILTIN_SPOTS[key];
+    const addBtn = isBuiltinSpot && !isInMyList
+      ? `<button onclick="addBuiltinToMySpots('${key}')" style="margin-top:8px;width:100%;padding:5px 8px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:4px;color:#00e5a0;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">+ ADD TO MY SPOTS</button>`
+      : isInMyList ? `<div style="margin-top:6px;font-size:11px;color:#00e5a0;text-align:center;">✓ In your spots</div>` : '';
     marker.bindPopup(`
       <div style="font-family:'Barlow Condensed',sans-serif;min-width:140px;">
         <div style="font-size:16px;font-weight:700;color:#040d1a;margin-bottom:4px;">${spot.label}</div>
@@ -2344,6 +2364,7 @@ function updateMapMarkers() {
         <div style="font-size:12px;color:#333;">🧭 ${hData.dir} — ${dirLabel}</div>
         <div style="font-size:12px;color:#333;">🌊 ${hData.swell}m swell · ${hData.temp}°C</div>
         <div style="margin-top:8px;padding:4px 8px;background:${conditionColor(cond)}22;border-radius:4px;font-size:11px;text-align:center;font-weight:600;">Tap to select this spot</div>
+        ${addBtn}
       </div>
     `, { maxWidth: 200 });
 
@@ -2855,12 +2876,32 @@ function saveNewLocation() {
   updateOffshoreInfoBar();
 }
 
+function addBuiltinToMySpots(key) {
+  const spot = BUILTIN_SPOTS[key];
+  if (!spot || LOCATIONS[key]) return;
+  const loc = { ...spot, key, isCustom: true, isBuiltin: false };
+  LOCATIONS[key] = loc;
+  profile.customLocations = profile.customLocations || [];
+  profile.customLocations.push(loc);
+  _store.set('wc_profile', JSON.stringify(profile));
+  syncSpotCoords();
+  renderLocationList(); renderLocationSelect(); renderHomeSpotSelect();
+  // Close popup and switch to this spot
+  if (leafletMap) leafletMap.closePopup();
+  currentLocation = key;
+  const sel = document.getElementById('locationSelect'); if(sel) sel.value = key;
+  init();
+}
+
 function deleteLocation(key) {
   if(!confirm('Remove this location?')) return;
   profile.customLocations=(profile.customLocations||[]).filter(c=>c.key!==key);
   delete LOCATIONS[key];
   delete SPOT_COORDS[key];
+  // Remove marker from map immediately
+  if (leafletMarkers[key]) { leafletMap && leafletMap.removeLayer(leafletMarkers[key]); delete leafletMarkers[key]; }
   _store.set('wc_profile', JSON.stringify(profile));
+  syncSpotCoords();
   const locs=getAllLocations(); const keys=Object.keys(locs);
   if(currentLocation===key) {
     currentLocation=keys.length?keys[0]:'';
