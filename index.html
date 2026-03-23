@@ -1415,7 +1415,7 @@ const BUILTIN_SPOTS = {
 
 // Default example location shown on first install
 const EXAMPLE_LOCATIONS = {
-  eastbourne: { ...BUILTIN_SPOTS.eastbourne, key:'eastbourne', isCustom:true, isBuiltin:false },
+  eastbourne: { ...BUILTIN_SPOTS.eastbourne, isCustom:true, isBuiltin:false },
 };
 
 const WEATHER_ICONS = {
@@ -2268,17 +2268,14 @@ function makeArrowIcon(spd, dirDeg) {
 // Create spot marker as a styled DivIcon
 function makeSpotIcon(locKey, cond, isSelected) {
   const spot = SPOT_COORDS[locKey];
-  if (!spot) return L.divIcon({ html: '', className: '' });
   // Selected = gold, personal spot = sky blue, builtin spot = mint green
   const col = isSelected ? '#f7c948' : (spot?.isBuiltin ? '#00e5a0' : '#5bc4f5');
   const isMobile = window.innerWidth < 600;
   const scale = isMobile ? 0.85 : 1.0;
 
   const dotR = Math.round((isSelected ? 10 : 7) * scale);
-  const labelMaxChars = (spot.label || '').length;
-  const svgW = Math.max(Math.round(48 * scale), Math.round(labelMaxChars * 7 * scale));
+  const svgW = Math.round(48 * scale);
   const svgH = Math.round(60 * scale);
-  const svgHalfW = Math.round(svgW / 2);
   const fontSize = Math.round((isSelected ? 11 : 10) * scale);
 
   const ringStroke = isSelected ? `stroke="white" stroke-width="2.5"` : `stroke="#040d1a" stroke-width="2"`;
@@ -2291,6 +2288,11 @@ function makeSpotIcon(locKey, cond, isSelected) {
 
   const labelCol = isSelected ? '#f7c948' : 'rgba(255,255,255,0.9)';
   const labelWeight = isSelected ? 700 : 500;
+
+  const labelMaxChars = spot.label.length;
+  const svgW = Math.max(Math.round(48 * scale), Math.round(labelMaxChars * 7 * scale));
+  const svgH = Math.round(60 * scale);
+  const svgHalfW = Math.round(svgW / 2);
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="-${svgHalfW} -24 ${svgW} 56">
     ${pulse}
@@ -3558,15 +3560,7 @@ if(profile.unit) windUnit=profile.unit;
 rebuildWingRecs();
 
 // Load user's custom locations into LOCATIONS
-// Also repair any old entries that are missing the key property
-(profile.customLocations||[]).forEach(c => {
-  if (!c.key) {
-    // Try to find key by matching name against BUILTIN_SPOTS
-    const found = Object.entries(BUILTIN_SPOTS).find(([k,v]) => v.name === c.name);
-    if (found) c.key = found[0];
-  }
-  if (c.key) LOCATIONS[c.key] = c;
-});
+(profile.customLocations||[]).forEach(c=>{ LOCATIONS[c.key]=c; });
 
 // First-time user: seed Eastbourne as example if no locations saved
 if(!(profile.customLocations||[]).length) {
