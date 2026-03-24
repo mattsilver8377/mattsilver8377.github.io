@@ -928,9 +928,11 @@
       </div>
     </div>
     <!-- Leaflet map container -->
-    <div id="leafletMap" style="width:100%;height:320px;"></div>
-    <!-- Wind arrow canvas overlay — drawn on top of leaflet -->
-    <canvas id="windMapCanvas" style="display:none;"></canvas>
+    <div id="mapContainer" style="position:relative;width:100%;height:320px;">
+      <div id="leafletMap" style="width:100%;height:320px;"></div>
+      <!-- Particle canvas overlay — sits on top of leaflet, pointer-events:none so map stays interactive -->
+      <canvas id="windMapCanvas" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:400;"></canvas>
+    </div>
     <!-- Legend BELOW the map -->
     <div style="padding:12px 16px;border-top:1px solid var(--glass-border);display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;">
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
@@ -1401,16 +1403,26 @@ const LOCATIONS = {};
 
 // Built-in seeded spots — shown on map but not in user's list unless added
 const BUILTIN_SPOTS = {
-  eastbourne:  { name:"Eastbourne Beach",   lat:50.768,  lon:0.290,   waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.8],  beachBearing:150, crossDirs:['SW','WSW','W','WNW','SE','ESE','SSW'], onDirs:['S','SSW','SSE'], offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','WSW','W','SE','S','SSW','SSE','ESE'], isBuiltin:true },
-  pevensey:    { name:"Pevensey Bay",        lat:50.820,  lon:0.358,   waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.5],  beachBearing:160, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW'], offDirs:['N','NNE','NE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
-  seaford:     { name:"Seaford Beach",       lat:50.770,  lon:0.100,   waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.5],  beachBearing:155, crossDirs:['SW','WSW','W','SE','ESE','SSW'], onDirs:['S','SSE'], offDirs:['N','NNE','NE','NNW'], allWindDirs:['SW','W','SE','S','SSW'], isBuiltin:true },
-  rye:         { name:"Rye / Camber Sands",  lat:50.920,  lon:0.760,   waterTemp:12, sunrise:"06:25", sunset:"18:50", tideRange:[1.0,7.0],  beachBearing:170, crossDirs:['SW','W','WSW','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
-  cooden:      { name:"Cooden Beach",        lat:50.840,  lon:0.440,   waterTemp:12, sunrise:"06:27", sunset:"18:51", tideRange:[1.0,6.8],  beachBearing:155, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW'], offDirs:['N','NE','NNE','NW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
-  bewlwater:   { name:"Bewl Water",          lat:51.065,  lon:0.390,   waterTemp:11, sunrise:"06:25", sunset:"18:53", tideRange:[0,0],       beachBearing:0,   crossDirs:['SW','W','NW','SE','NE','S','N','E'], onDirs:[], offDirs:[], allWindDirs:['SW','W','NW','SE','NE','S','N','E'], isBuiltin:true },
-  mudeford:    { name:"Mudeford",            lat:50.723,  lon:-1.742,  waterTemp:12, sunrise:"06:35", sunset:"19:05", tideRange:[0.5,1.8],  beachBearing:180, crossDirs:['SW','W','WSW','SE','ESE'], onDirs:['S','SSW'], offDirs:['N','NE','NNE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
-  hayling:     { name:"Hayling Island",      lat:50.782,  lon:-0.978,  waterTemp:12, sunrise:"06:32", sunset:"19:00", tideRange:[1.0,4.5],  beachBearing:170, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
-  portland:    { name:"Portland Harbour",    lat:50.572,  lon:-2.440,  waterTemp:12, sunrise:"06:38", sunset:"19:08", tideRange:[0.5,2.0],  beachBearing:200, crossDirs:['SW','W','WSW','NW','SE'], onDirs:['S','SSW'], offDirs:['N','NE','NNE','E'], allWindDirs:['SW','W','NW','SE','S'], isBuiltin:true },
-  poole:       { name:"Poole Harbour",       lat:50.700,  lon:-1.980,  waterTemp:12, sunrise:"06:36", sunset:"19:06", tideRange:[0.3,1.8],  beachBearing:180, crossDirs:['SW','W','WSW','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  // South-facing beach, ~160° bearing. Cross=SW/W/SE, Off=N/NE/NW, On=S/SSW/SSE
+  eastbourne:  { name:"Eastbourne Beach",  lat:50.768,  lon:0.290,  waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.8], beachBearing:160, crossDirs:['SW','WSW','W','WNW','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NNE','NE','NNW','NW'], allWindDirs:['SW','WSW','W','SE','S','SSW','SSE','ESE'], isBuiltin:true },
+  // South-facing, ~170°. Similar to Eastbourne
+  pevensey:    { name:"Pevensey Bay",      lat:50.820,  lon:0.358,  waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.5], beachBearing:170, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NNE','NE','NNW','NW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  // South-facing below Seven Sisters, ~155°
+  seaford:     { name:"Seaford Beach",     lat:50.770,  lon:0.100,  waterTemp:12, sunrise:"06:28", sunset:"18:52", tideRange:[1.0,6.5], beachBearing:155, crossDirs:['SW','WSW','W','SE','ESE','SSW'], onDirs:['S','SSE'], offDirs:['N','NNE','NE','NNW','NW'], allWindDirs:['SW','W','SE','S','SSW'], isBuiltin:true },
+  // South-facing, ~175°. Rye Bay faces almost due south
+  rye:         { name:"Rye / Camber",      lat:50.920,  lon:0.760,  waterTemp:12, sunrise:"06:25", sunset:"18:50", tideRange:[1.0,7.0], beachBearing:175, crossDirs:['SW','W','WSW','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NNW','NW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  // South-facing, ~165°
+  cooden:      { name:"Cooden Beach",      lat:50.840,  lon:0.440,  waterTemp:12, sunrise:"06:27", sunset:"18:51", tideRange:[1.0,6.8], beachBearing:165, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  // Inland reservoir — all directions workable, no offshore risk
+  bewlwater:   { name:"Bewl Water",        lat:51.065,  lon:0.390,  waterTemp:11, sunrise:"06:25", sunset:"18:53", tideRange:[0,0],     beachBearing:0,   crossDirs:['SW','W','NW','SE','NE','S','N','E','WSW','ESE','NNW','SSW'], onDirs:[], offDirs:[], allWindDirs:['SW','W','NW','SE','NE','S','N','E','WSW','ESE'], isBuiltin:true },
+  // Mudeford spit faces SE into Christchurch Bay, ~130°. SW=cross, S=onshore, N/NE/NW=offshore
+  mudeford:    { name:"Mudeford",          lat:50.723,  lon:-1.742, waterTemp:12, sunrise:"06:35", sunset:"19:05", tideRange:[0.5,1.8], beachBearing:130, crossDirs:['SW','WSW','W','E','ESE'], onDirs:['S','SE','SSE'], offDirs:['N','NNE','NE','NW','NNW'], allWindDirs:['SW','W','SE','S','E'], isBuiltin:true },
+  // Hayling Island south beach faces ~175° (almost due south)
+  hayling:     { name:"Hayling Island",    lat:50.762,  lon:-0.978, waterTemp:12, sunrise:"06:32", sunset:"19:00", tideRange:[1.0,4.5], beachBearing:175, crossDirs:['SW','WSW','W','SE','ESE'], onDirs:['S','SSW','SSE'], offDirs:['N','NE','NNE','NW','NNW'], allWindDirs:['SW','W','SE','S'], isBuiltin:true },
+  // Portland Harbour faces NE into the harbour, ~050°. SW/W=offshore, NE/E=onshore, SE/NW=cross
+  portland:    { name:"Portland Harbour",  lat:50.572,  lon:-2.440, waterTemp:12, sunrise:"06:38", sunset:"19:08", tideRange:[0.5,2.0], beachBearing:50,  crossDirs:['NW','NNW','SE','SSE'], onDirs:['NE','ENE','E'], offDirs:['SW','WSW','W','SSW','S'], allWindDirs:['NW','SE','NE','E'], isBuiltin:true },
+  // Poole Harbour entrance/Sandbanks faces NW into harbour, ~315°. SE/S=offshore, NW=onshore, SW/NE=cross
+  poole:       { name:"Poole / Sandbanks", lat:50.700,  lon:-1.950, waterTemp:12, sunrise:"06:36", sunset:"19:06", tideRange:[0.3,1.8], beachBearing:315, crossDirs:['SW','WSW','NE','ENE'], onDirs:['NW','NNW','W'], offDirs:['SE','SSE','S','SSW','E'], allWindDirs:['SW','NE','NW','W'], isBuiltin:true },
 };
 
 // Default example location shown on first install
@@ -1428,7 +1440,7 @@ function seededRandom(seed) {
 }
 
 function generateWeekData(locKey) {
-  const loc = LOCATIONS[locKey] || Object.values(LOCATIONS)[0];
+  const loc = LOCATIONS[locKey] || BUILTIN_SPOTS[locKey] || Object.values(LOCATIONS)[0];
   if (!loc) return [];
   const days = [];
   const today = new Date();
@@ -1503,7 +1515,7 @@ const DIR_DEG = {
 };
 
 function getDirType(dir, locKey) {
-  const loc = LOCATIONS[locKey];
+  const loc = LOCATIONS[locKey] || BUILTIN_SPOTS[locKey];
   if (!loc) return 'cross';
 
   // Inland lake — all directions safe
@@ -1609,7 +1621,7 @@ function degToCompass(deg) {
 function msToKts(ms) { return Math.round(ms * 1.94384); }
 
 async function fetchRealWeather(locKey) {
-  const loc = LOCATIONS[locKey];
+  const loc = LOCATIONS[locKey] || BUILTIN_SPOTS[locKey];
 
   // Fetch weather + marine in parallel
   const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}` +
@@ -1633,10 +1645,9 @@ async function fetchRealWeather(locKey) {
 }
 
 function buildWeekDataFromAPI(locKey, apiData) {
-  const loc = LOCATIONS[locKey] || Object.values(LOCATIONS)[0];
-  if (!loc) return [];
-  const { weather: apiHourly, marine: apiMarine } = apiData;
+  const loc = LOCATIONS[locKey] || BUILTIN_SPOTS[locKey] || Object.values(LOCATIONS)[0];
   const days = [];
+  if (!loc) return [];
   const today = new Date();
   today.setHours(0,0,0,0);
 
@@ -1817,7 +1828,7 @@ function renderDate() {
 }
 
 function renderBanner() {
-  const loc = LOCATIONS[currentLocation] || Object.values(LOCATIONS)[0];
+  const loc = ( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ) || Object.values(LOCATIONS)[0];
   if (!weekData.length || !weekData[0].hours) return;
   const now = weekData[0].hours[3]; // ~9am today
   if (!now) return;
@@ -1934,13 +1945,13 @@ function renderStats() {
     </div>
     <div class="stat-card">
       <div class="stat-card-label">Water Temp</div>
-      <div class="stat-card-val" style="color:var(--sky)">${LOCATIONS[currentLocation].waterTemp}°</div>
+      <div class="stat-card-val" style="color:var(--sky)">${( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).waterTemp}°</div>
       <div class="stat-card-sub">°C sea surface</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-label">Wetsuit</div>
-      <div class="stat-card-val" style="color:${recommendWetsuit(LOCATIONS[currentLocation].waterTemp).color};font-size:1em;">${recommendWetsuit(LOCATIONS[currentLocation].waterTemp).suit}</div>
-      <div class="stat-card-sub">${recommendWetsuit(LOCATIONS[currentLocation].waterTemp).tip}</div>
+      <div class="stat-card-val" style="color:${recommendWetsuit(( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).waterTemp).color};font-size:1em;">${recommendWetsuit(( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).waterTemp).suit}</div>
+      <div class="stat-card-sub">${recommendWetsuit(( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).waterTemp).tip}</div>
     </div>
   `;
 }
@@ -2057,7 +2068,7 @@ function renderForecastTable() {
 }
 
 function renderTideChart() {
-  const loc = LOCATIONS[currentLocation] || Object.values(LOCATIONS)[0];
+  const loc = ( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ) || Object.values(LOCATIONS)[0];
   const day = weekData[selectedDay];
   if (!loc || !day || !day.tidePoints) return;
 
@@ -2151,7 +2162,7 @@ function renderTideChart() {
   document.getElementById('sunStrip').innerHTML = `
     <div class="sun-item">🌅 <span>Sunrise ${loc.sunrise}</span></div>
     <div class="sun-item" style="color:var(--text-muted);font-size:11px;letter-spacing:2px;">
-      ${Math.round(LOCATIONS[currentLocation].tideRange[1] * 10)/10}m tidal range
+      ${Math.round(( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).tideRange[1] * 10)/10}m tidal range
     </div>
     <div class="sun-item">🌇 <span>Sunset ${loc.sunset}</span></div>
   `;
@@ -2208,61 +2219,121 @@ function conditionColor(cond) {
   return map[cond.cls] || '#5bc4f5';
 }
 
-// Create SVG wind arrow as a Leaflet DivIcon
-function makeArrowIcon(spd, dirDeg) {
-  const col = windColor(spd);
-  const isMobile = window.innerWidth < 600;
-  const base = isMobile ? 0.8 : 1.0;
-  const size = Math.round(40 * base);
+// ==================== CANVAS PARTICLE WIND SYSTEM ====================
+let particleCanvas = null;
+let particleCtx = null;
+let particles = [];
+let particleAnimFrame = null;
+let currentParticleDir = 0;
+let currentParticleSpd = 0;
 
-  // Windfinder-style: solid teardrop body + sharp arrowhead, rotated to wind direction
-  // Wind barb: tail at top, point at bottom (arrow shows direction wind is blowing TO)
-  const animId = `wf_${Math.round(dirDeg)}_${Math.round(spd)}`;
-  const dx = Math.round(Math.sin(dirDeg * Math.PI / 180) * 8 * base);
-  const dy = Math.round(-Math.cos(dirDeg * Math.PI / 180) * 8 * base);
+function initParticleCanvas() {
+  particleCanvas = document.getElementById('windMapCanvas');
+  if (!particleCanvas) return;
+  particleCtx = particleCanvas.getContext('2d', { alpha: true });
+  resizeParticleCanvas();
+}
 
-  if (!document.getElementById('style_' + animId)) {
-    const s = document.createElement('style');
-    s.id = 'style_' + animId;
-    s.textContent = `@keyframes ${animId} {
-      0%   { transform:translate(0,0); opacity:0.3; }
-      50%  { opacity:0.95; }
-      100% { transform:translate(${dx}px,${dy}px); opacity:0; }
-    }`;
-    document.head.appendChild(s);
+function resizeParticleCanvas() {
+  if (!particleCanvas || !leafletMap) return;
+  const mapEl = document.getElementById('leafletMap');
+  if (!mapEl) return;
+  particleCanvas.width = mapEl.offsetWidth;
+  particleCanvas.height = mapEl.offsetHeight;
+}
+
+function windColorParticle(spd) {
+  if (spd < 8)  return 'rgba(120,180,220,';
+  if (spd < 12) return 'rgba(150,210,240,';
+  if (spd < 22) return 'rgba(255,255,255,';
+  if (spd < 28) return 'rgba(247,201,72,';
+  if (spd < 35) return 'rgba(255,140,66,';
+  return 'rgba(255,59,92,';
+}
+
+function createParticles(spd, dirDeg) {
+  if (!particleCanvas) return;
+  const w = particleCanvas.width;
+  const h = particleCanvas.height;
+  const count = Math.round(w * h / 1800); // density scales with map size
+  particles = [];
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      age: Math.random() * 80, // stagger starting ages
+      maxAge: 40 + Math.random() * 60,
+      speed: (spd / 10) * (0.8 + Math.random() * 0.4) * 1.5,
+    });
   }
+}
 
-  const duration = spd < 5 ? 3.2 : spd < 12 ? 2.2 : spd < 22 ? 1.6 : 1.0;
-  const opacity = spd < 5 ? 0.5 : 0.9;
-  const glow = `filter:drop-shadow(0 0 3px ${col}99);`;
+function animateParticles() {
+  if (!particleCtx || !particleCanvas) return;
+  const w = particleCanvas.width;
+  const h = particleCanvas.height;
+  const rad = currentParticleDir * Math.PI / 180;
+  const dx = Math.sin(rad);
+  const dy = -Math.cos(rad);
+  const col = windColorParticle(currentParticleSpd);
+  const streakLen = Math.max(8, currentParticleSpd * 0.9);
 
-  // Windfinder-style barb: rounded body narrowing to arrowhead point
-  // Extra barb lines for higher wind speeds
-  const barbs = spd >= 25
-    ? `<line x1="-6" y1="-2" x2="0" y2="-8" stroke="${col}" stroke-width="2" stroke-linecap="round"/>
-       <line x1="-5" y1="2" x2="0" y2="-3" stroke="${col}" stroke-width="1.5" stroke-linecap="round"/>`
-    : spd >= 15
-    ? `<line x1="-6" y1="-1" x2="0" y2="-7" stroke="${col}" stroke-width="2" stroke-linecap="round"/>`
-    : '';
+  // Fade trail using destination-out compositing — keeps map visible underneath
+  particleCtx.globalCompositeOperation = 'destination-out';
+  particleCtx.fillStyle = 'rgba(0,0,0,0.25)';
+  particleCtx.fillRect(0, 0, w, h);
+  particleCtx.globalCompositeOperation = 'source-over';
 
-  const svg = `<div style="width:${size}px;height:${size}px;animation:${animId} ${duration}s ease-in infinite;${glow}opacity:${opacity};">
-    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="-14 -14 28 28" style="transform:rotate(${dirDeg}deg)">
-      <!-- Teardrop body -->
-      <ellipse cx="0" cy="2" rx="4" ry="7" fill="${col}" opacity="0.85"/>
-      <!-- Arrowhead point -->
-      <polygon points="0,-13 -5,-4 5,-4" fill="${col}"/>
-      <!-- Dark centre dot for depth -->
-      <circle cx="0" cy="3" r="1.5" fill="rgba(0,0,0,0.35)"/>
-      ${barbs}
-    </svg>
-  </div>`;
+  particles.forEach(p => {
+    p.x += dx * p.speed;
+    p.y += dy * p.speed;
+    p.age++;
 
-  return L.divIcon({
-    html: svg,
-    className: '',
-    iconSize: [size, size],
-    iconAnchor: [size/2, size/2],
+    // Wrap around edges
+    if (p.x < -20) p.x = w + 10;
+    if (p.x > w + 20) p.x = -10;
+    if (p.y < -20) p.y = h + 10;
+    if (p.y > h + 20) p.y = -10;
+
+    // Reset old particles
+    if (p.age > p.maxAge) {
+      p.x = Math.random() * w;
+      p.y = Math.random() * h;
+      p.age = 0;
+      p.maxAge = 40 + Math.random() * 60;
+    }
+
+    // Draw streak — opacity based on age (fade in and out)
+    const lifeRatio = p.age / p.maxAge;
+    const opacity = lifeRatio < 0.2 ? lifeRatio / 0.2 : lifeRatio > 0.8 ? (1 - lifeRatio) / 0.2 : 1;
+    particleCtx.beginPath();
+    particleCtx.moveTo(p.x - dx * streakLen * 0.5, p.y - dy * streakLen * 0.5);
+    particleCtx.lineTo(p.x + dx * streakLen * 0.5, p.y + dy * streakLen * 0.5);
+    particleCtx.strokeStyle = col + (opacity * 0.9) + ')';
+    particleCtx.lineWidth = 1.5;
+    particleCtx.lineCap = 'round';
+    particleCtx.stroke();
   });
+
+  particleAnimFrame = requestAnimationFrame(animateParticles);
+}
+
+function startParticles(spd, dirDeg) {
+  currentParticleDir = dirDeg;
+  currentParticleSpd = spd;
+  if (particleAnimFrame) cancelAnimationFrame(particleAnimFrame);
+  if (!particleCanvas) initParticleCanvas();
+  resizeParticleCanvas();
+  if (particleCtx) {
+    particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+  }
+  createParticles(spd, dirDeg);
+  animateParticles();
+}
+
+function stopParticles() {
+  if (particleAnimFrame) { cancelAnimationFrame(particleAnimFrame); particleAnimFrame = null; }
+  if (particleCtx && particleCanvas) particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
 }
 
 // Create spot marker as a styled DivIcon
@@ -2335,6 +2406,8 @@ function initLeafletMap() {
 
   // Add spot markers
   updateMapMarkers();
+  // Init particle canvas overlay
+  initParticleCanvas();
 }
 
 function updateMapMarkers() {
@@ -2343,7 +2416,7 @@ function updateMapMarkers() {
   const day = weekData[selectedDay];
   const hData = day.hours[Math.min(mapHourIdx, day.hours.length - 1)];
 
-  // Remove old wind arrow markers
+  // Remove old wind arrow markers (legacy cleanup)
   if (windArrowLayer) {
     windArrowLayer.forEach(m => leafletMap.removeLayer(m));
   }
@@ -2393,7 +2466,6 @@ function updateMapMarkers() {
     });
 
     marker.on('click', () => {
-      // Select this location
       currentLocation = key;
       document.getElementById('locationSelect').value = key;
       leafletMap.setView([spot.lat, spot.lon], Math.max(leafletMap.getZoom(), 12));
@@ -2404,48 +2476,18 @@ function updateMapMarkers() {
     leafletMarkers[key] = marker;
   });
 
-  // Add wind arrows on a grid across the visible map area
-  const bounds = leafletMap.getBounds();
-  const latStep = (bounds.getNorth() - bounds.getSouth()) / 5;
-  const lonStep = (bounds.getEast() - bounds.getWest()) / 7;
+  // Update particle direction/speed (particles keep animating continuously)
   const dirDeg = ((DIR_TO_DEG[hData.dir] || 0) + 180) % 360;
-
-  for (let lat = bounds.getSouth() + latStep * 0.5; lat < bounds.getNorth(); lat += latStep) {
-    for (let lon = bounds.getWest() + lonStep * 0.5; lon < bounds.getEast(); lon += lonStep) {
-      const tooClose = Object.values(SPOT_COORDS).some(s =>
-        Math.abs(s.lat - lat) < latStep * 0.4 && Math.abs(s.lon - lon) < lonStep * 0.4
-      );
-      if (tooClose) continue;
-
-      const seed = Math.round(lat * 100) + Math.round(lon * 100) + mapHourIdx;
-      const spd = Math.max(0, Math.round(hData.wind * (1 + Math.sin(seed) * 0.15)));
-
-      // Stagger animation delay so arrows don't all move in sync
-      const delay = (Math.abs(seed) % 20) / 10; // 0–2s delay
-
-      const arrowMarker = L.marker([lat, lon], {
-        icon: makeArrowIcon(spd, dirDeg, false),
-        interactive: false,
-        zIndexOffset: -100,
-      }).addTo(leafletMap);
-
-      // Apply stagger delay to the inner div animation
-      const el = arrowMarker.getElement();
-      if (el) {
-        const animated = el.querySelector('div');
-        if (animated) animated.style.animationDelay = `-${delay}s`;
-      }
-
-      windArrowLayer.push(arrowMarker);
-    }
-  }
+  currentParticleDir = dirDeg;
+  currentParticleSpd = hData.wind;
+  if (!particleAnimFrame) startParticles(hData.wind, dirDeg);
 
   // Update time label
   document.getElementById('mapTimeLabel').textContent =
     `${day.date.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} · ${String(hData.hour).padStart(2,'0')}:00`;
 
   document.getElementById('mapTitle').textContent =
-    `Satellite Map — ${LOCATIONS[currentLocation]?.name || currentLocation}`;
+    `Satellite Map — ${( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] )?.name || currentLocation}`;
 }
 
 function toggleMapAnimation() {
@@ -2474,7 +2516,7 @@ function initWindMap() {
     mapAnimating = false;
   }
 
-  const spot = SPOT_COORDS[currentLocation] || SPOT_COORDS['royalparade'] || SPOT_COORDS['eastbourne'];
+  const spot = SPOT_COORDS[currentLocation] || SPOT_COORDS['eastbourne'];
   if (!spot) return;
 
   if (!leafletMap) {
@@ -2483,6 +2525,7 @@ function initWindMap() {
   } else {
     leafletMap.setView([spot.lat, spot.lon], Math.max(leafletMap.getZoom(), 12));
   }
+  initParticleCanvas();
   updateMapMarkers();
 
   mapAnimating = true;
@@ -2496,10 +2539,13 @@ function initWindMap() {
   }, 1400);
 }
 
-// Refresh arrows when map is moved/zoomed
+// Refresh spot markers when map is moved/zoomed (particles continue automatically)
 function setupMapMoveListener() {
   if (leafletMap) {
-    leafletMap.on('moveend zoomend', () => updateMapMarkers());
+    leafletMap.on('moveend zoomend', () => {
+      resizeParticleCanvas();
+      updateMapMarkers();
+    });
   }
 }
 
@@ -3195,7 +3241,7 @@ function openLogSession() {
   if(weekData.length) { const h=weekData[0].hours[Math.min(Math.floor(new Date().getHours()/3),weekData[0].hours.length-1)]; if(h){document.getElementById('sWind').value=h.wind;document.getElementById('sSwell').value=h.swell;} }
   document.getElementById('sWing').innerHTML='<option value="">— select wing —</option>'+(profile.quiver||[]).sort((a,b)=>b.size-a.size).map(w=>'<option value="'+w.size+'">'+w.name+'</option>').join('');
   document.getElementById('sBoard').innerHTML='<option value="">— select board —</option>'+(profile.boards||[]).map(b=>'<option value="'+b.name+'">'+b.name+'</option>').join('');
-  const wt=LOCATIONS[currentLocation]?.waterTemp||12;
+  const wt=( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] )?.waterTemp||12;
   const wm=profile.wetsuits?.length?[...(profile.wetsuits||[])].sort((a,b)=>b.minTemp-a.minTemp).find(w=>wt>=w.minTemp):null;
   document.getElementById('sWetsuit').innerHTML='<option value="">— select wetsuit —</option>'+(profile.wetsuits||[]).map(w=>'<option value="'+w.thickness+'"'+(wm&&wm.thickness===w.thickness?' selected':'')+'>'+w.name+' ('+w.thickness+')</option>').join('')+'<option value="boardshorts">Boardshorts / None</option>';
   document.getElementById('sDurHrs').value='2'; document.getElementById('sDurMins').value='0';
