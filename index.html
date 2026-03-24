@@ -1988,6 +1988,11 @@ function selectDay(i) {
   renderDayTabs();
   renderForecastTable();
   renderTideChart();
+  // Update map particles and markers for newly selected day
+  if (leafletMap) {
+    stopParticles();
+    updateMapMarkers();
+  }
 }
 
 function renderForecastTable() {
@@ -2256,8 +2261,8 @@ function createParticles(spd, dirDeg) {
   const w = particleCanvas.width;
   const h = particleCanvas.height;
 
-  // Windfinder style: density scales strongly with wind speed
-  const baseDensity = spd < 5 ? 4000 : spd < 10 ? 2500 : spd < 15 ? 1800 : spd < 22 ? 1200 : spd < 30 ? 800 : 500;
+  // Windfinder style: density scales with wind speed but stays readable
+  const baseDensity = spd < 5 ? 8000 : spd < 10 ? 6000 : spd < 15 ? 4500 : spd < 22 ? 3200 : spd < 30 ? 2400 : 1800;
   const count = Math.round(w * h / baseDensity);
 
   particles = [];
@@ -2266,7 +2271,7 @@ function createParticles(spd, dirDeg) {
       x: Math.random() * w,
       y: Math.random() * h,
       age: Math.random() * 80,
-      maxAge: spd < 8 ? 60 + Math.random() * 60 : spd < 20 ? 40 + Math.random() * 40 : 25 + Math.random() * 30,
+      maxAge: spd < 8 ? 70 + Math.random() * 60 : spd < 20 ? 50 + Math.random() * 40 : 35 + Math.random() * 30,
       speedMult: 0.7 + Math.random() * 0.6,
     });
   }
@@ -2282,11 +2287,11 @@ function animateParticles() {
   const dy = -Math.cos(rad);
   const col = windColorParticle(spd);
 
-  // Particle base speed: calm=slow, storm=fast — mirrors Windfinder
-  const baseSpeed = spd < 5 ? 0.4 : spd < 10 ? 0.9 : spd < 15 ? 1.6 : spd < 22 ? 2.6 : spd < 30 ? 3.8 : 5.2;
+  // Particle base speed: calm=slow, storm=fast
+  const baseSpeed = spd < 5 ? 0.3 : spd < 10 ? 0.6 : spd < 15 ? 1.1 : spd < 22 ? 1.7 : spd < 30 ? 2.4 : 3.2;
 
-  // Streak length: calm=short stubby, storm=long flowing
-  const streakLen = spd < 5 ? 6 : spd < 10 ? 10 : spd < 15 ? 16 : spd < 22 ? 24 : spd < 30 ? 35 : 48;
+  // Streak length: calm=short, storm=longer but not crazy
+  const streakLen = spd < 5 ? 5 : spd < 10 ? 8 : spd < 15 ? 12 : spd < 22 ? 17 : spd < 30 ? 22 : 28;
 
   // Fade speed: fast wind = faster fade (streaks don't linger as long)
   const fadeAmount = spd < 8 ? 0.15 : spd < 20 ? 0.22 : 0.32;
