@@ -1,13 +1,17 @@
 {
+  "id": "/Wingcast/",
   "name": "WingCast — Wingfoil Forecast",
   "short_name": "WingCast",
-  "description": "7-day wingfoil forecast with wind, tides and conditions for South Coast UK",
+  "description": "7-day wingfoil forecast with wind, swell and conditions for wingfoilers. Wing size recommendations, offshore warnings, session logging and more.",
   "start_url": "/Wingcast/index.html",
   "display": "standalone",
   "background_color": "#040d1a",
   "theme_color": "#040d1a",
   "orientation": "portrait-primary",
   "scope": "/Wingcast/",
+  "lang": "en-GB",
+  "dir": "ltr",
+  "categories": ["weather", "sports"],
   "icons": [
     { "src": "icons/icon-72x72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
     { "src": "icons/icon-96x96.png",   "sizes": "96x96",   "type": "image/png", "purpose": "any maskable" },
@@ -18,6 +22,22 @@
     { "src": "icons/icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any maskable" },
     { "src": "icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
-  "categories": ["weather", "sports"],
-  "screenshots": []
+  "screenshots": [
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "WingCast forecast screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today's Forecast",
+      "short_name": "Forecast",
+      "description": "Check today's wingfoil conditions",
+      "url": "/Wingcast/index.html",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ]
 }
