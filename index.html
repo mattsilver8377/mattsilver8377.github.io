@@ -1618,17 +1618,17 @@ function degToCompass(deg) {
 }
 
 // Convert m/s to knots
-function msToKts(v) { return Math.round(v); } // API returns knots directly via wind_speed_unit=kn
+function msToKts(v) { return Math.round(v * 0.539957); } // Open-Meteo default = km/h, convert to knots
 
 async function fetchRealWeather(locKey) {
   const loc = LOCATIONS[locKey] || BUILTIN_SPOTS[locKey];
   if (!loc) throw new Error('Location not found: ' + locKey);
 
   // Fetch weather + marine in parallel
-  // Open-Meteo wind_speed_unit=knots returns knots directly
+  // No wind_speed_unit specified — Open-Meteo defaults to km/h, we convert to knots
   const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}` +
     `&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m,windgusts_10m,winddirection_10m,cloudcover` +
-    `&wind_speed_unit=kn&timezone=Europe%2FLondon&forecast_days=7`;
+    `&timezone=Europe%2FLondon&forecast_days=7`;
 
   const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
     `&hourly=wave_height,swell_wave_height,swell_wave_direction,swell_wave_period,wave_period` +
