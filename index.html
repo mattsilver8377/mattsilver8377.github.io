@@ -975,6 +975,7 @@
             <th>DIR</th>
             <th>WEATHER</th>
             <th>TEMP</th>
+            <th>TIDE<br>M</th>
             <th>SWELL<br>M</th>
             <th>PERIOD<br>S</th>
             <th>CLOUD<br>%</th>
@@ -1087,6 +1088,18 @@
       </div>
       <div id="locationList" style="display:flex;flex-direction:column;gap:8px;"></div>
       <div style="margin-top:10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);">Tap a spot on the map to add it. Live weather worldwide.</div>
+    </div>
+
+    <!-- Built-in Spots Browser -->
+    <div class="profile-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="profile-section-title" style="margin:0;">🗺️ BROWSE UK SPOTS</div>
+        <button onclick="toggleSpotBrowser()" id="spotBrowserToggleBtn" class="profile-add-btn" style="color:var(--sky);border-color:rgba(91,196,245,0.25);background:rgba(91,196,245,0.08);">SHOW</button>
+      </div>
+      <div id="spotBrowserPanel" style="display:none;">
+        <input id="spotSearchInput" type="text" placeholder="Search spots..." oninput="renderSpotBrowser()" style="width:100%;padding:8px 12px;background:var(--glass);border:1px solid var(--glass-border);border-radius:6px;color:var(--text-bright);font-family:'Barlow Condensed',sans-serif;font-size:14px;margin-bottom:10px;outline:none;">
+        <div id="spotBrowserList" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;"></div>
+      </div>
     </div>
     <!-- Quiver -->
     <div class="profile-section">
@@ -2103,6 +2116,21 @@ function renderForecastTable() {
     const isBest = bestHours.has(rowIdx);
     const rowStyle = isBest ? 'background:rgba(0,229,160,0.06);' : '';
 
+    // Tide height for this hour
+    const loc = LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation];
+    const isInland = loc && loc.tideRange[0] === 0 && loc.tideRange[1] === 0;
+    let tideCell = '<td style="color:var(--text-muted);text-align:center;font-size:11px;">—</td>';
+    if (!isInland && day.tidePoints) {
+      const tp = day.tidePoints.find(p => p.t === h.hour) || day.tidePoints.reduce((a,b) => Math.abs(b.t-h.hour)<Math.abs(a.t-h.hour)?b:a, day.tidePoints[0]);
+      if (tp) {
+        // Determine rising or falling
+        const tpNext = day.tidePoints.find(p => p.t === h.hour + 1);
+        const trend = tpNext ? (tpNext.h > tp.h ? '↑' : '↓') : '';
+        const tideCol = tp.h > (loc.tideRange[0] + loc.tideRange[1]) * 0.6 ? '#5bc4f5' : tp.h < (loc.tideRange[0] + loc.tideRange[1]) * 0.4 ? '#3a6a8a' : 'var(--text-dim)';
+        tideCell = `<td style="color:${tideCol};font-family:'Bebas Neue',sans-serif;font-size:16px;text-align:center;">${tp.h}<span style="font-size:11px;color:var(--text-muted);">${trend}</span></td>`;
+      }
+    }
+
     // Wind speed colour cell
     const windCol = wc.text === 'ws-perfect-text' ? '#00e5a0' : wc.text === 'ws-light-text' ? '#7ab3d4' : wc.text === 'ws-strong-text' ? '#f7c948' : wc.text === 'ws-gusty-text' ? '#ff8c42' : wc.text === 'ws-storm-text' ? '#ff3b5c' : 'var(--text-dim)';
 
@@ -2146,6 +2174,7 @@ function renderForecastTable() {
       <td style="text-align:center;">${dirArrow}${dirLabel}</td>
       <td style="text-align:center;font-size:18px;">${WEATHER_ICONS[h.weather] || '⛅'}</td>
       <td style="color:${tempCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.temp}°</td>
+      ${tideCell}
       <td style="color:${swellCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.swell}</td>
       <td style="color:${periodCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.wavePeriod||'—'}</td>
       <td style="color:${cloudCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.cloud??'—'}</td>
@@ -3049,6 +3078,68 @@ function saveNewLocation() {
   closeModal('addLocationModal');
   renderLocationList(); renderLocationSelect(); renderHomeSpotSelect();
   updateOffshoreInfoBar();
+}
+
+function toggleSpotBrowser() {
+  const panel = document.getElementById('spotBrowserPanel');
+  const btn = document.getElementById('spotBrowserToggleBtn');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (btn) btn.textContent = isOpen ? 'SHOW' : 'HIDE';
+  if (!isOpen) renderSpotBrowser();
+}
+
+function renderSpotBrowser() {
+  const el = document.getElementById('spotBrowserList');
+  if (!el) return;
+  const search = (document.getElementById('spotSearchInput')?.value || '').toLowerCase();
+  const myKeys = new Set(Object.keys(LOCATIONS));
+
+  // Group by region
+  const regions = {
+    'South East': ['eastbourne','pevensey','seaford','rye','cooden','greatstone','shoreham','lancing','eastwittering','bracklesham','whitstable','clacton'],
+    'South Coast': ['hayling','calshot','mudeford','poole','portland','weymouth'],
+    'South West': ['exmouth','bigbury','westwardho','saunton','watergate','hayle','marazion','rockcamel','praa','stithians'],
+    'Solent & IoW': ['ryde'],
+    'East Anglia': ['hunstanton','brancaster','wells','mersea','southend'],
+    'Inland England': ['grafham','rutland','bewlwater','chewvalley','carsington','hollingworth','grimwith','ullswater','coniston'],
+    'Wales': ['rhosneigr','abersoch','hellsmouth','newgale','llangennith','bala'],
+    'North West': ['westkirby','wallasey','ainsdale','morecambe'],
+    'Yorkshire & NE': ['hornsea','filey','scarborough','tynemouth','druridge'],
+    'Scotland East': ['longniddry','gullane','belhaven','westsands','largobay','aberdeen'],
+    'Scotland West': ['troon','barassie','machrihanish','tiree','nairn','lochken','lochmorlich'],
+    'Northern Ireland': ['ballyholme','portstewart','strangford'],
+  };
+
+  let html = '';
+  for (const [region, keys] of Object.entries(regions)) {
+    const filtered = keys.filter(k => {
+      const spot = BUILTIN_SPOTS[k];
+      return spot && (!search || spot.name.toLowerCase().includes(search) || region.toLowerCase().includes(search));
+    });
+    if (!filtered.length) continue;
+
+    html += `<div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);letter-spacing:2px;padding:4px 0 2px;">${region.toUpperCase()}</div>`;
+    html += filtered.map(k => {
+      const spot = BUILTIN_SPOTS[k];
+      const inMyList = myKeys.has(k);
+      const isInland = spot.tideRange[0] === 0 && spot.tideRange[1] === 0;
+      const typeIcon = isInland ? '🏞️' : '🌊';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--glass);border:1px solid var(--glass-border);border-radius:6px;">
+        <span style="font-size:14px;">${typeIcon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--text-bright);font-weight:600;">${spot.name}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);">${spot.lat.toFixed(2)}, ${spot.lon.toFixed(2)}</div>
+        </div>
+        ${inMyList
+          ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--wind-green);letter-spacing:1px;">✓ ADDED</span>`
+          : `<button onclick="addBuiltinToMySpots('${k}');renderSpotBrowser();renderLocationList();" style="padding:4px 10px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);border-radius:4px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px;">+ ADD</button>`
+        }
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = html || '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;color:var(--text-muted);text-align:center;padding:14px;">No spots found</div>';
 }
 
 function addBuiltinToMySpots(key) {
