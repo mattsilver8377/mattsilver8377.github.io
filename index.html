@@ -937,12 +937,12 @@
     <div style="padding:12px 16px;border-top:1px solid var(--glass-border);display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;">
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:2px;">WIND:</span>
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#3a6a8a;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">&lt;8 calm</span></div>
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#7ab3d4;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">8–12 light</span></div>
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#00e5a0;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">12–22 🏄 perfect</span></div>
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#f7c948;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">22–28 strong</span></div>
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#ff8c42;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">28–35 gusty</span></div>
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#ff3b5c;"></div><span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">&gt;35 storm</span></div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#3a6a8a;"></div><span id="legendCalm" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">&lt;8 calm</span></div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#7ab3d4;"></div><span id="legendLight" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">8–12 light</span></div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#00e5a0;"></div><span id="legendPerfect" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">12–22 🏄 perfect</span></div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#f7c948;"></div><span id="legendStrong" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">22–28 strong</span></div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#ff8c42;"></div><span id="legendGusty" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">28–35 gusty</span></div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:14px;height:14px;border-radius:50%;background:#ff3b5c;"></div><span id="legendStorm" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">&gt;35 storm</span></div>
       </div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:1px;">Tap a spot to select it</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
@@ -1193,7 +1193,19 @@
       <div><label class="profile-label">WETSUIT WORN</label><select id="sWetsuit" class="profile-select"></select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><label class="profile-label">WIND (KTS)</label><input id="sWind" type="number" placeholder="Auto-filled" class="profile-input"></div>
+        <div><label class="profile-label">WIND DIR</label>
+          <select id="sWindDir" class="profile-select">
+            <option value="">— direction —</option>
+            <option>N</option><option>NNE</option><option>NE</option><option>ENE</option>
+            <option>E</option><option>ESE</option><option>SE</option><option>SSE</option>
+            <option>S</option><option>SSW</option><option>SW</option><option>WSW</option>
+            <option>W</option><option>WNW</option><option>NW</option><option>NNW</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><label class="profile-label">SWELL (M)</label><input id="sSwell" type="number" step="0.1" placeholder="Auto-filled" class="profile-input"></div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:2px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:1px;" id="sConditionLabel"></div>
       </div>
       <div>
         <label class="profile-label">RATING</label>
@@ -1573,16 +1585,8 @@ function generateWeekData(locKey) {
       hours.push({ hour: h, wind, gust, dir, temp, swell, wavePeriod, cloud, rain, weather });
     }
 
-    // Generate tide data (sinusoidal with offset per day)
-    const tidePoints = [];
-    const phase = (d * 50 + Math.floor(seededRandom(seed + 20) * 120)) % 360;
-    const [tMin, tMax] = loc.tideRange;
-    const tMid = (tMin + tMax) / 2;
-    const tAmp = (tMax - tMin) / 2;
-    for (let t = 0; t <= 24; t++) {
-      const tideH = tMid + tAmp * Math.sin((t / 12.42 * Math.PI * 2) + (phase * Math.PI / 180));
-      tidePoints.push({ t, h: +tideH.toFixed(2) });
-    }
+    // Generate tide data using harmonic calculator
+    const tidePoints = buildTidePoints(locKey, date);
 
     // High/low tide events
     const tideEvents = [];
@@ -1597,6 +1601,177 @@ function generateWeekData(locKey) {
     days.push({ date, hours, tidePoints, tideEvents });
   }
   return days;
+}
+
+// ==================== HARMONIC TIDE CALCULATOR ====================
+// Uses M2, S2, N2 constituents with NTSLF-published lunitidal intervals for UK ports
+// Speeds in degrees/hour (standard harmonic values)
+const TIDE_SPEEDS = {
+  M2: 28.9841042,  // Principal lunar semi-diurnal (12.42h period)
+  S2: 30.0000000,  // Principal solar semi-diurnal (12.00h period)
+  N2: 28.4397295,  // Larger lunar elliptic semi-diurnal (12.66h period)
+  K1: 15.0410686,  // Lunisolar diurnal (23.93h period)
+  O1: 13.9430356,  // Principal lunar diurnal (25.82h period)
+};
+
+// Port harmonic constants derived from NTSLF lunitidal intervals and Admiralty data
+// Format: { msl, M2a, M2g, S2a, S2g, N2a, N2g, K1a, K1g, O1a, O1g }
+// msl = mean sea level above chart datum (m)
+// *a = amplitude (m), *g = phase lag (degrees, UTC)
+// South Coast ports: predominantly semi-diurnal, M2+S2 dominate
+const TIDE_PORTS = {
+  // === SOUTH COAST ===
+  // Newhaven (closest to Eastbourne/Seaford) - from NTSLF + Admiralty
+  newhaven:    { msl:3.53, M2a:2.78, M2g:304, S2a:0.96, S2g:338, N2a:0.54, N2g:284, K1a:0.07, K1g:180, O1a:0.05, O1g:180 },
+  // Portsmouth - from Admiralty Tide Tables
+  portsmouth:  { msl:2.79, M2a:1.87, M2g:312, S2a:0.70, S2g:352, N2a:0.36, N2g:290, K1a:0.06, K1g:180, O1a:0.04, O1g:180 },
+  // Shoreham - interpolated between Newhaven and Portsmouth
+  shoreham:    { msl:3.28, M2a:2.50, M2g:307, S2a:0.87, S2g:342, N2a:0.48, N2g:286, K1a:0.06, K1g:180, O1a:0.04, O1g:180 },
+  // Weymouth - from Admiralty (double LW port, M4 significant but ignored for simplicity)
+  weymouth:    { msl:0.88, M2a:0.55, M2g:340, S2a:0.20, S2g:20,  N2a:0.11, N2g:320, K1a:0.05, K1g:180, O1a:0.04, O1g:180 },
+  // Portland Harbour - similar to Weymouth
+  portland:    { msl:0.88, M2a:0.58, M2g:338, S2a:0.21, S2g:18,  N2a:0.11, N2g:316, K1a:0.05, K1g:180, O1a:0.04, O1g:180 },
+  // Bournemouth/Christchurch area (Solent double-tide distortion)
+  bournemouth: { msl:1.12, M2a:0.62, M2g:352, S2a:0.26, S2g:36,  N2a:0.12, N2g:330, K1a:0.05, K1g:180, O1a:0.04, O1g:180 },
+  // Dover - from Admiralty
+  dover:       { msl:3.67, M2a:2.83, M2g:315, S2a:1.00, S2g:352, N2a:0.57, N2g:295, K1a:0.08, K1g:200, O1a:0.05, O1g:185 },
+  // === SOUTH WEST ===
+  // Devonport/Plymouth
+  devonport:   { msl:2.96, M2a:2.00, M2g:300, S2a:0.69, S2g:340, N2a:0.40, N2g:280, K1a:0.07, K1g:200, O1a:0.05, O1g:190 },
+  // Newlyn/Penzance
+  newlyn:      { msl:3.05, M2a:2.03, M2g:270, S2a:0.68, S2g:307, N2a:0.41, N2g:250, K1a:0.07, K1g:190, O1a:0.05, O1g:180 },
+  // Exmouth - similar to Devonport
+  exmouth:     { msl:2.10, M2a:1.40, M2g:310, S2a:0.48, S2g:348, N2a:0.28, N2g:288, K1a:0.06, K1g:195, O1a:0.04, O1g:185 },
+  // === EAST ANGLIA ===
+  // Lowestoft
+  lowestoft:   { msl:1.44, M2a:0.82, M2g:221, S2a:0.22, S2g:262, N2a:0.17, N2g:202, K1a:0.09, K1g:190, O1a:0.06, O1g:175 },
+  // Hunstanton
+  hunstanton:  { msl:3.62, M2a:2.80, M2g:183, S2a:0.75, S2g:216, N2a:0.55, N2g:163, K1a:0.09, K1g:190, O1a:0.06, O1g:175 },
+  // === NORTH EAST ===
+  // North Shields/Tyne
+  northshields:{ msl:2.67, M2a:1.69, M2g:83,  S2a:0.47, S2g:120, N2a:0.36, N2g:65,  K1a:0.08, K1g:185, O1a:0.06, O1g:172 },
+  // Scarborough
+  scarborough: { msl:3.12, M2a:1.84, M2g:58,  S2a:0.54, S2g:98,  N2a:0.37, N2g:38,  K1a:0.08, K1g:182, O1a:0.06, O1g:170 },
+  // === NORTH WEST ===
+  // Liverpool
+  liverpool:   { msl:5.18, M2a:3.31, M2g:310, S2a:1.11, S2g:350, N2a:0.65, N2g:288, K1a:0.11, K1g:190, O1a:0.07, O1g:175 },
+  // Heysham/Morecambe
+  heysham:     { msl:5.17, M2a:3.28, M2g:307, S2a:1.10, S2g:347, N2a:0.65, N2g:285, K1a:0.11, K1g:190, O1a:0.07, O1g:175 },
+  // === WALES ===
+  // Holyhead
+  holyhead:    { msl:2.67, M2a:1.54, M2g:285, S2a:0.54, S2g:327, N2a:0.31, N2g:265, K1a:0.10, K1g:195, O1a:0.07, O1g:180 },
+  // Milford Haven
+  milfordhaven:{ msl:3.83, M2a:2.57, M2g:260, S2a:0.90, S2g:300, N2a:0.51, N2g:240, K1a:0.10, K1g:195, O1a:0.07, O1g:182 },
+  // Mumbles/Swansea
+  mumbles:     { msl:4.82, M2a:3.23, M2g:267, S2a:1.14, S2g:308, N2a:0.64, N2g:247, K1a:0.10, K1g:192, O1a:0.07, O1g:180 },
+  // === SCOTLAND EAST ===
+  // Leith/Edinburgh
+  leith:       { msl:2.86, M2a:1.75, M2g:57,  S2a:0.51, S2g:96,  N2a:0.37, N2g:38,  K1a:0.10, K1g:185, O1a:0.07, O1g:170 },
+  // Aberdeen
+  aberdeen:    { msl:2.28, M2a:1.31, M2g:11,  S2a:0.38, S2g:50,  N2a:0.27, N2g:351, K1a:0.09, K1g:183, O1a:0.06, O1g:168 },
+  // === SCOTLAND WEST ===
+  // Troon/Ayr
+  troon:       { msl:1.87, M2a:1.08, M2g:303, S2a:0.38, S2g:343, N2a:0.22, N2g:282, K1a:0.10, K1g:192, O1a:0.07, O1g:178 },
+  // === NORTHERN IRELAND ===
+  // Belfast/Bangor
+  belfast:     { msl:1.94, M2a:1.27, M2g:298, S2a:0.42, S2g:336, N2a:0.25, N2g:278, K1a:0.10, K1g:193, O1a:0.07, O1g:178 },
+  // Portrush
+  portrush:    { msl:0.82, M2a:0.38, M2g:185, S2a:0.13, S2g:222, N2a:0.08, N2g:165, K1a:0.09, K1g:190, O1a:0.06, O1g:175 },
+};
+
+// Map each built-in spot key to its nearest tide port
+const SPOT_TIDE_PORT = {
+  eastbourne:'newhaven', pevensey:'newhaven', seaford:'newhaven', rye:'dover',
+  cooden:'newhaven', greatstone:'dover', shoreham:'shoreham', lancing:'shoreham',
+  eastwittering:'portsmouth', bracklesham:'portsmouth', whitstable:'dover',
+  clacton:'lowestoft', hayling:'portsmouth', calshot:'portsmouth',
+  mudeford:'bournemouth', poole:'bournemouth', portland:'portland',
+  weymouth:'weymouth', exmouth:'exmouth', bigbury:'devonport',
+  westwardho:'devonport', saunton:'devonport', watergate:'newlyn',
+  hayle:'newlyn', marazion:'newlyn', rockcamel:'newlyn', praa:'newlyn',
+  stithians:'newlyn', ryde:'portsmouth', hunstanton:'hunstanton',
+  brancaster:'hunstanton', wells:'hunstanton', mersea:'lowestoft',
+  southend:'lowestoft', hornsea:'scarborough', filey:'scarborough',
+  scarborough:'scarborough', tynemouth:'northshields', druridge:'northshields',
+  longniddry:'leith', gullane:'leith', belhaven:'leith', westsands:'leith',
+  largobay:'leith', aberdeen:'aberdeen', troon:'troon', barassie:'troon',
+  machrihanish:'troon', tiree:'holyhead', nairn:'aberdeen',
+  lochken:'leith', lochmorlich:'aberdeen', rhosneigr:'holyhead',
+  abersoch:'holyhead', hellsmouth:'holyhead', newgale:'milfordhaven',
+  llangennith:'mumbles', bala:'holyhead', westkirby:'liverpool',
+  wallasey:'liverpool', ainsdale:'liverpool', morecambe:'heysham',
+  ballyholme:'belfast', portstewart:'portrush', strangford:'belfast',
+  grafham:'lowestoft', rutland:'lowestoft', bewlwater:'newhaven',
+  chewvalley:'devonport', carsington:'liverpool', hollingworth:'liverpool',
+  grimwith:'northshields', ullswater:'heysham', coniston:'heysham',
+};
+
+// Reference epoch for harmonic calculation (J2000.0 = 1 Jan 2000 12:00 UTC)
+// Phase offsets at this epoch for M2, S2, N2 (degrees)
+// These are the V0 equilibrium arguments at J2000
+const V0 = { M2: 245.7, S2: 0.0, N2: 186.6, K1: 100.5, O1: 14.1 };
+
+function calcHarmonicTide(portKey, dateUTC, hourUTC) {
+  const port = TIDE_PORTS[portKey];
+  if (!port) return null;
+
+  // Hours since J2000.0 epoch (1 Jan 2000 12:00 UTC)
+  const j2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
+  const tHours = (dateUTC.getTime() - j2000) / 3600000 + hourUTC;
+
+  let h = port.msl;
+  const constituents = [
+    { speed: TIDE_SPEEDS.M2, amp: port.M2a, phase: port.M2g, v0: V0.M2 },
+    { speed: TIDE_SPEEDS.S2, amp: port.S2a, phase: port.S2g, v0: V0.S2 },
+    { speed: TIDE_SPEEDS.N2, amp: port.N2a, phase: port.N2g, v0: V0.N2 },
+    { speed: TIDE_SPEEDS.K1, amp: port.K1a, phase: port.K1g, v0: V0.K1 },
+    { speed: TIDE_SPEEDS.O1, amp: port.O1a, phase: port.O1g, v0: V0.O1 },
+  ];
+
+  for (const c of constituents) {
+    const arg = (c.speed * tHours + c.v0 - c.phase) * Math.PI / 180;
+    h += c.amp * Math.cos(arg);
+  }
+
+  return Math.max(0, +h.toFixed(2));
+}
+
+function buildTidePoints(locKey, date) {
+  // Find nearest port
+  const portKey = SPOT_TIDE_PORT[locKey];
+  const loc = LOCATIONS[locKey] || BUILTIN_SPOTS[locKey];
+
+  // Inland lakes — no tides
+  if (!loc || (loc.tideRange[0] === 0 && loc.tideRange[1] === 0)) {
+    const pts = [];
+    for (let t = 0; t <= 24; t++) pts.push({ t, h: 0 });
+    return pts;
+  }
+
+  // Use harmonic calculator if we have port constants
+  if (portKey && TIDE_PORTS[portKey]) {
+    const pts = [];
+    for (let t = 0; t <= 24; t++) {
+      const h = calcHarmonicTide(portKey, date, t);
+      pts.push({ t, h });
+    }
+    return pts;
+  }
+
+  // Fallback for custom locations without port data — improved sinusoidal
+  // Uses lunar day offset to get correct timing shift
+  const lunarHour = 12.4206; // M2 period hours
+  const daysSinceEpoch = (date.getTime() - Date.UTC(2000, 0, 1)) / 86400000;
+  const phaseOffset = ((daysSinceEpoch * 24 / lunarHour) % 1) * 2 * Math.PI;
+  const [tMin, tMax] = loc.tideRange;
+  const tMid = (tMin + tMax) / 2;
+  const tAmp = (tMax - tMin) / 2;
+  const pts = [];
+  for (let t = 0; t <= 24; t++) {
+    const h = tMid + tAmp * Math.cos((t / lunarHour * 2 * Math.PI) - phaseOffset);
+    pts.push({ t, h: Math.max(tMin, +h.toFixed(2)) });
+  }
+  return pts;
 }
 
 // Direction name to degrees
@@ -1786,16 +1961,8 @@ function buildWeekDataFromAPI(locKey, apiData) {
       hours.push({ hour: h, wind, gust, dir, temp, swell, wavePeriod, cloud, rain, weather });
     }
 
-    // Tides still simulated (no free tide API)
-    const tidePoints = [];
-    const phase = (d * 50 + Math.floor(seededRandom(seed + 20) * 120)) % 360;
-    const [tMin, tMax] = loc.tideRange;
-    const tMid = (tMin + tMax) / 2;
-    const tAmp = (tMax - tMin) / 2;
-    for (let t = 0; t <= 24; t++) {
-      const tideH = tMid + tAmp * Math.sin((t / 12.42 * Math.PI * 2) + (phase * Math.PI / 180));
-      tidePoints.push({ t, h: +tideH.toFixed(2) });
-    }
+    // Generate tide data using harmonic calculator
+    const tidePoints = buildTidePoints(locKey, date);
 
     const tideEvents = [];
     for (let t = 1; t < tidePoints.length - 1; t++) {
@@ -1914,6 +2081,7 @@ function renderAll() {
   renderForecastTable();
   renderTideChart();
   initWindMap();
+  updateMapLegend();
 }
 
 function renderDate() {
@@ -3374,9 +3542,22 @@ function renderWetsuitList() {
 }
 
 // ---- UNIT PREFS ----
+function updateMapLegend() {
+  const u = unitLabel(windUnit);
+  const c = (kts) => cvtWind(kts);
+  const el = (id, text) => { const e = document.getElementById(id); if(e) e.textContent = text; };
+  el('legendCalm',    `<${c(8)} calm`);
+  el('legendLight',   `${c(8)}–${c(12)} light`);
+  el('legendPerfect', `${c(12)}–${c(22)} 🏄 perfect`);
+  el('legendStrong',  `${c(22)}–${c(28)} strong`);
+  el('legendGusty',   `${c(28)}–${c(35)} gusty`);
+  el('legendStorm',   `>${c(35)} storm`);
+}
+
 function setUnitPref(u) {
   windUnit=u; document.getElementById('unitToggleBtn').textContent=unitLabel(u);
   updateUnitPrefBtns(); renderBanner(); renderStats(); renderForecastTable();
+  updateMapLegend();
   profile.unit=u; _store.set('wc_profile', JSON.stringify(profile));
 }
 
@@ -3436,7 +3617,15 @@ function openLogSession() {
   document.getElementById('sDate').value=new Date().toISOString().split('T')[0];
   const sLocSel=document.getElementById('sLocation');
   sLocSel.innerHTML=Object.entries(getAllLocations()).map(([k,v])=>'<option value="'+k+'"'+(k===currentLocation?' selected':'')+'>'+v.name+'</option>').join('');
-  if(weekData.length) { const h=weekData[0].hours[Math.min(Math.floor(new Date().getHours()/3),weekData[0].hours.length-1)]; if(h){document.getElementById('sWind').value=h.wind;document.getElementById('sSwell').value=h.swell;} }
+  if(weekData.length) {
+    const h=weekData[0].hours[Math.min(Math.floor(new Date().getHours()/3),weekData[0].hours.length-1)];
+    if(h){
+      document.getElementById('sWind').value=h.wind;
+      document.getElementById('sSwell').value=h.swell;
+      const dirSel=document.getElementById('sWindDir');
+      if(dirSel && h.dir) dirSel.value=h.dir;
+    }
+  }
   document.getElementById('sWing').innerHTML='<option value="">— select wing —</option>'+(profile.quiver||[]).sort((a,b)=>b.size-a.size).map(w=>'<option value="'+w.size+'">'+w.name+'</option>').join('');
   document.getElementById('sBoard').innerHTML='<option value="">— select board —</option>'+(profile.boards||[]).map(b=>'<option value="'+b.name+'">'+b.name+'</option>').join('');
   const wt=( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] )?.waterTemp||12;
@@ -3457,7 +3646,9 @@ function saveSession() {
   getSessions(); const sessions=getSessions();
   sessions.unshift({id:Date.now(),date,location:loc,start:document.getElementById('sStart').value,duration:+(hrs+mins/60).toFixed(2),
     wing:document.getElementById('sWing').value,board:document.getElementById('sBoard').value,wetsuit:document.getElementById('sWetsuit').value,
-    wind:parseFloat(document.getElementById('sWind').value)||0,swell:parseFloat(document.getElementById('sSwell').value)||0,
+    wind:parseFloat(document.getElementById('sWind').value)||0,
+    windDir:document.getElementById('sWindDir')?.value||'',
+    swell:parseFloat(document.getElementById('sSwell').value)||0,
     rating:sessionRating,notes:document.getElementById('sNotes').value});
   saveSessions(sessions); closeLogSession(); switchTab('sessions');
 }
@@ -3467,8 +3658,8 @@ function deleteSession(id) { if(!confirm('Delete this session?')) return; saveSe
 function exportSessions() {
   const sessions=getSessions(); if(!sessions.length){alert('No sessions to export');return;}
   const all=getAllLocations();
-  const csv=[['Date','Location','Start','Duration','Wing','Board','Wetsuit','Wind(kts)','Swell(m)','Rating','Notes'],
-    ...sessions.map(s=>[s.date,(all[s.location]?.name||s.location),s.start||'',s.duration||'',s.wing||'',s.board||'',s.wetsuit||'',s.wind||'',s.swell||'',s.rating||'',(s.notes||'').replace(/,/g,' ')])
+  const csv=[['Date','Location','Start','Duration','Wing','Board','Wetsuit','Wind(kts)','WindDir','Swell(m)','Rating','Notes'],
+    ...sessions.map(s=>[s.date,(all[s.location]?.name||s.location),s.start||'',s.duration||'',s.wing||'',s.board||'',s.wetsuit||'',s.wind||'',s.windDir||'',s.swell||'',s.rating||'',(s.notes||'').replace(/,/g,' ')])
   ].map(r=>r.join(',')).join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='wingcast-sessions.csv'; a.click();
 }
@@ -3524,7 +3715,7 @@ function renderSessions() {
     '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">'+(s.rating?'<div style="font-size:11px;">'+'⭐'.repeat(s.rating)+'</div>':'')+'<button onclick="deleteSession('+s.id+')" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;">✕</button></div></div>'+
     '<div class="session-stats">'+
     (s.duration?'<div class="session-stat"><div class="session-stat-val">'+fmtDur(s.duration)+'</div><div class="session-stat-lbl">DURATION</div></div>':'')+
-    (s.wind?'<div class="session-stat"><div class="session-stat-val" style="color:'+windColor(s.wind)+';">'+s.wind+'kts</div><div class="session-stat-lbl">WIND</div></div>':'')+
+    (s.wind?'<div class="session-stat"><div class="session-stat-val" style="color:'+windColor(s.wind)+';">'+s.wind+'kts'+(s.windDir?' '+s.windDir:'')+'</div><div class="session-stat-lbl">WIND</div></div>':'')+
     (s.swell?'<div class="session-stat"><div class="session-stat-val" style="color:var(--sky);">'+s.swell+'m</div><div class="session-stat-lbl">SWELL</div></div>':'')+
     (s.wing?'<div class="session-stat"><div class="session-stat-val" style="color:var(--wind-green);">'+s.wing+'m</div><div class="session-stat-lbl">WING</div></div>':'')+
     (s.wetsuit?'<div class="session-stat"><div class="session-stat-val" style="color:#7ab3d4;font-size:13px;">'+s.wetsuit+'</div><div class="session-stat-lbl">WETSUIT</div></div>':'')+
