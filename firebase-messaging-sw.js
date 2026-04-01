@@ -3,9 +3,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 const CACHE_NAME = 'wingcast-v32';
-const BASE = '';
 
-// Firebase config — must match index.html
 firebase.initializeApp({
   apiKey: "AIzaSyBywWIHDEloGao0lHnAISsYHvJqATzU0Q8",
   authDomain: "wingcast-59284.firebaseapp.com",
@@ -23,11 +21,11 @@ messaging.onBackgroundMessage(payload => {
   const { title, body, icon } = payload.notification || {};
   self.registration.showNotification(title || 'WingCast Wind Alert 🏄', {
     body: body || 'Conditions look good at your spot!',
-    icon: icon || BASE + '/icons/icon-192x192.png',
-    badge: BASE + '/icons/icon-96x96.png',
+    icon: icon || '/icons/icon-192x192.png',
+    badge: '/icons/icon-96x96.png',
     tag: 'wingcast-alert',
     renotify: true,
-    data: { url: 'https://mattsilver8377.github.io/Wingcast/' },
+    data: { url: 'https://mattsilver8377.github.io/' },
     actions: [
       { action: 'view', title: 'View Forecast' },
       { action: 'dismiss', title: 'Dismiss' }
@@ -35,26 +33,30 @@ messaging.onBackgroundMessage(payload => {
   });
 });
 
-// Handle notification click
+// Handle notification click — open or focus the app
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   if (event.action === 'dismiss') return;
-  const url = event.notification.data?.url || 'https://mattsilver8377.github.io/Wingcast/';
+  const url = event.notification.data?.url || 'https://mattsilver8377.github.io/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url.includes('Wingcast') && 'focus' in client) return client.focus();
+        if (client.url.includes('mattsilver8377.github.io') && 'focus' in client) {
+          return client.focus();
+        }
       }
       return clients.openWindow(url);
     })
   );
 });
 
+// ==================== CACHE & FETCH ====================
+
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache =>
-      cache.addAll([BASE + '/manifest.json']).catch(() => {})
+      cache.addAll(['/manifest.json']).catch(() => {})
     )
   );
 });
@@ -72,13 +74,17 @@ self.addEventListener('fetch', event => {
   if (event.request.url.startsWith('chrome-extension')) return;
   const url = new URL(event.request.url);
   if (url.hostname !== location.hostname) return;
-  if (url.pathname.endsWith('.html') || url.pathname === BASE + '/' || url.pathname === BASE) {
+
+  // Always fetch HTML fresh — never serve stale app shell
+  if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === '') {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
-        .catch(() => caches.match(BASE + '/index.html'))
+        .catch(() => caches.match('/index.html'))
     );
     return;
   }
+
+  // Cache-first for static assets (icons, manifest)
   event.respondWith(
     caches.match(event.request).then(cached => cached ||
       fetch(event.request).then(resp => {

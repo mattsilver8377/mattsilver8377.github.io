@@ -2881,7 +2881,7 @@ function setupMapMoveListener() {
 // Register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('firebase-messaging-sw.js');
+    navigator.serviceWorker.register('firebase-messaging-sw.js')
       .then(reg => console.log('[WingCast] SW registered:', reg.scope))
       .catch(err => console.warn('[WingCast] SW failed:', err));
   });
@@ -4244,7 +4244,7 @@ async function subscribePush() {
     setTimeout(() => {
       new Notification('WingCast 🏄', {
         body: 'Wind alerts are now active! You\'ll be notified when conditions hit your target.',
-        icon: '/Wingcast/icons/icon-192x192.png',
+        icon: '/icons/icon-192x192.png',
       });
     }, 2000);
 
