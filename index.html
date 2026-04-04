@@ -3858,32 +3858,47 @@ async function loadAISummary() {
   const day = weekData[selectedDay];
   const loc = getAllLocations()[currentLocation];
   const hours = day.hours;
-  const dateStr = day.date.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
 
-  // Score each hour
-  const scored = hours.map(h => {
+  // Parse sunrise/sunset from location data — format "06:28"
+  // Only consider hours between sunrise and 1hr before sunset
+  let sunriseHour = 6, sunsetHour = 20;
+  if (loc?.sunrise) {
+    sunriseHour = parseInt(loc.sunrise.split(':')[0]);
+  }
+  if (loc?.sunset) {
+    sunsetHour = parseInt(loc.sunset.split(':')[0]) - 1; // 1hr before sunset
+  }
+
+  // Score ALL hours (for offshore detection across whole day)
+  const allScored = hours.map(h => {
     const c = getWingCondition(h.wind, h.gust, h.swell, h.dir, currentLocation);
     return { h, c, score: c.cls==='epic'?4 : c.cls==='good'?3 : c.cls==='marginal'?1 : 0 };
   });
 
-  const epicHours  = scored.filter(s => s.score === 4);
-  const goodHours  = scored.filter(s => s.score >= 3);
-  const offshoreHrs = scored.filter(s => s.c.danger);
-  const bestScore  = Math.max(...scored.map(s => s.score));
+  // Score only DAYLIGHT hours for session recommendations
+  const scored = allScored.filter(s => s.h.hour >= sunriseHour && s.h.hour <= sunsetHour);
 
-  // Wing recommendation for best window
-  const bestH = scored.reduce((a,b) => b.score > a.score ? b : a, scored[0]);
+  // Use daylight hours for session windows, all hours for offshore warnings
+  const epicHours   = scored.filter(s => s.score === 4);
+  const goodHours   = scored.filter(s => s.score >= 3);
+  const offshoreHrs = allScored.filter(s => s.c.danger);
+  const bestScore   = scored.length ? Math.max(...scored.map(s => s.score)) : 0;
+
+  // Wing recommendation for best daylight window
+  const bestH = scored.length
+    ? scored.reduce((a,b) => b.score > a.score ? b : a, scored[0])
+    : allScored[0];
   const wingRec = recommendWing(bestH.h.wind);
 
   let summary = '';
   const locName = loc?.name || currentLocation;
 
-  // Check current/imminent conditions first (first hour of day data)
-  const currentSlot = scored[0];
+  // Current conditions check (first hour of data)
+  const currentSlot = allScored[0];
   const isCurrentlyOffshore = currentSlot?.c?.danger;
 
   if (isCurrentlyOffshore && bestScore >= 3) {
-    const first = (epicHours[0] || goodHours[0]);
+    const first = epicHours[0] || goodHours[0];
     const winStr = wingRec ? ` ${wingRec.size} recommended.` : '';
     summary = `⚠️ Currently OFFSHORE at ${locName} — do not launch yet. Good window expected around ${String(first.h.hour).padStart(2,'0')}:00 (${first.h.wind}kts ${first.h.dir}).${winStr}`;
   } else if (isCurrentlyOffshore) {
@@ -3894,8 +3909,8 @@ async function loadAISummary() {
     const first = epicHours[0];
     const last  = epicHours[epicHours.length-1];
     const winStr = wingRec ? ` Take your ${wingRec.size}.` : '';
-    summary = `🟢 EPIC conditions ${String(first.h.hour).padStart(2,'0')}:00–${String(last.h.hour+3).padStart(2,'0')}:00 at ${locName} — ${first.h.wind}kts ${first.h.dir}, ${first.h.swell}m swell (${first.h.wavePeriod||'?'}s period).${winStr}`;
-  } else if (bestScore === 3 && goodHours.length >= 1) {
+    summary = `🟢 EPIC conditions ${String(first.h.hour).padStart(2,'0')}:00–${String(last.h.hour+3).padStart(2,'0')}:00 at ${locName} — ${first.h.wind}kts ${first.h.dir}, ${first.h.swell}m swell.${winStr}`;
+  } else if (bestScore >= 3 && goodHours.length >= 1) {
     const first = goodHours[0];
     const winStr = wingRec ? ` ${wingRec.size} recommended.` : '';
     summary = `🔵 Good session possible around ${String(first.h.hour).padStart(2,'0')}:00 — ${first.h.wind}kts ${first.h.dir}, ${first.h.swell}m swell.${winStr} ${goodHours.length * 3}hrs of good+ conditions today.`;
