@@ -12,9 +12,15 @@
 <meta name="apple-mobile-web-app-title" content="WingCast">
 <meta name="application-name" content="WingCast">
 <meta name="theme-color" content="#040d1a">
-<meta name="description" content="7-day wingfoil forecast — wind, tides & conditions for South Coast UK">
+<meta name="description" content="7-day wingfoil forecast — wind, tides & conditions for UK spots">
 <meta name="msapplication-TileColor" content="#040d1a">
 <meta name="msapplication-TileImage" content="/icons/icon-144x144.png">
+<!-- Open Graph for WhatsApp/social sharing -->
+<meta property="og:title" content="WingCast — Wingfoil Forecast">
+<meta property="og:description" content="Live wind, tides & wingfoil conditions for 74 UK spots. Free forecast app.">
+<meta property="og:url" content="https://mattsilver8377.github.io/">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://mattsilver8377.github.io/icons/icon-512x512.png">
 
 <!-- PWA Manifest -->
 <link rel="manifest" href="/manifest.json">
@@ -901,7 +907,7 @@
   <div style="display:flex;align-items:flex-start;gap:10px;">
     <div style="font-size:18px;flex-shrink:0;">📋</div>
     <div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px;">TODAY'S SUMMARY</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:4px;">📋 TODAY'S CONDITIONS SUMMARY</div>
       <div id="aiSummaryText" style="font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--text-bright);line-height:1.4;"></div>
     </div>
     <button onclick="loadAISummary()" id="aiRefreshBtn" style="margin-left:auto;background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;flex-shrink:0;">↻</button>
@@ -1309,10 +1315,10 @@
     <div style="margin-bottom:20px;">
       <label class="profile-label">CONDITION REPORTS</label>
       <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-        <div onclick="toggleAnonymous()" id="anonToggle" style="width:44px;height:24px;border-radius:12px;background:rgba(91,196,245,0.2);border:1px solid rgba(91,196,245,0.4);cursor:pointer;position:relative;transition:all 0.2s;">
+        <div onclick="toggleAnonymous()" id="anonToggle" style="width:44px;height:24px;border-radius:12px;background:rgba(255,59,92,0.15);border:1px solid rgba(255,59,92,0.3);cursor:pointer;position:relative;transition:all 0.2s;">
           <div id="anonToggleThumb" style="width:18px;height:18px;border-radius:50%;background:var(--sky);position:absolute;top:2px;left:4px;transition:left 0.2s;"></div>
         </div>
-        <span id="anonToggleLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);">POST ANONYMOUSLY — name hidden</span>
+        <span id="anonToggleLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);">POST ANONYMOUSLY — off (name shown)</span>
       </div>
     </div>
     <!-- Wind alerts -->
@@ -2181,10 +2187,14 @@ function renderBanner() {
     poor: cond.danger ? '⚠ OFFSHORE WIND — DO NOT LAUNCH. Risk of being blown out to sea.' : 'Stay on land today'
   };
 
+  const nowHour = weekData[0].hours[3]?.hour ?? 9;
+  const timeLabel = `NOW · ${String(nowHour).padStart(2,'0')}:00`;
+
   document.getElementById('conditionsBanner').innerHTML = `
     <div class="conditions-banner banner-${cond.cls}">
       <div class="banner-top-row">
         <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-bottom:3px;">CURRENT CONDITIONS · ${timeLabel}</div>
           <div class="banner-label">${cond.label}</div>
           <div class="banner-desc">${descs[cond.cls]}</div>
         </div>
@@ -4525,6 +4535,10 @@ function updateAuthUI() {
   }
   if (badge) badge.style.display = wcUserPro ? 'block' : 'none';
   if (banner) banner.style.display = (wcUser && !wcUserPro) ? 'flex' : 'none';
+  // Reload spot social now that auth state is known
+  if (currentLocation && typeof loadSpotSocial === 'function') {
+    setTimeout(() => loadSpotSocial(currentLocation), 300);
+  }
 }
 
 function applyProGating() {
@@ -5055,27 +5069,52 @@ function handleGpxFile(event) {
 let _socialUnsubscribe = null;
 
 function loadSpotSocial(spotKey) {
-  if (!spotKey || !_fbDb) { renderSpotSocialOffline(); return; }
+  if (!spotKey) return;
+  // Wait for Firestore to be ready
+  if (!_fbDb) {
+    setTimeout(() => loadSpotSocial(spotKey), 1000);
+    return;
+  }
   if (_socialUnsubscribe) { _socialUnsubscribe(); _socialUnsubscribe = null; }
   const now = new Date();
   const cutoff3h  = new Date(now - 3 * 60 * 60 * 1000);
   const cutoff24h = new Date(now - 24 * 60 * 60 * 1000);
-  _socialUnsubscribe = _fbDb.collection('checkins')
-    .where('spotKey', '==', spotKey)
-    .where('time', '>', cutoff3h)
-    .onSnapshot(snap => {
-      const checkins = snap.docs.map(d => d.data());
-      _fbDb.collection('reports').where('spotKey', '==', spotKey)
-        .where('time', '>', cutoff24h)
-        .orderBy('time', 'desc').limit(5).get()
-        .then(rs => renderSpotSocial(checkins, rs.docs.map(d => d.data()), spotKey))
-        .catch(() => renderSpotSocial(checkins, [], spotKey));
-    }, () => renderSpotSocialOffline());
+
+  // Real-time listener for check-ins
+  try {
+    _socialUnsubscribe = _fbDb.collection('checkins')
+      .where('spotKey', '==', spotKey)
+      .onSnapshot(snap => {
+        // Filter client-side to avoid needing composite index
+        const checkins = snap.docs.map(d => d.data())
+          .filter(d => d.time && (d.time.toDate ? d.time.toDate() : new Date(d.time)) > cutoff3h);
+        // Load reports
+        _fbDb.collection('reports')
+          .where('spotKey', '==', spotKey)
+          .orderBy('time', 'desc')
+          .limit(8)
+          .get()
+          .then(rs => {
+            const reports = rs.docs.map(d => d.data())
+              .filter(d => d.time && (d.time.toDate ? d.time.toDate() : new Date(d.time)) > cutoff24h);
+            renderSpotSocial(checkins, reports, spotKey);
+          })
+          .catch(() => renderSpotSocial(checkins, [], spotKey));
+      }, err => {
+        console.warn('[WingCast] Social listener error:', err.message);
+        renderSpotSocialOffline();
+      });
+  } catch(e) {
+    console.warn('[WingCast] loadSpotSocial error:', e.message);
+    renderSpotSocialOffline();
+  }
 }
 
 function renderSpotSocialOffline() {
   const el = document.getElementById('checkInCount');
-  if (el) el.innerHTML = `<span style="color:var(--text-muted);">Sign in to see who's at this spot</span>`;
+  if (el) el.innerHTML = wcUser
+    ? `<span style="color:var(--text-muted);">Loading spot data...</span>`
+    : `<span style="color:var(--text-muted);">Sign in to check in and see who's at this spot</span>`;
   const r = document.getElementById('conditionReports');
   if (r) r.style.display = 'none';
 }
@@ -5191,9 +5230,9 @@ function updateAnonToggle() {
   const tog = document.getElementById('anonToggle');
   const thumb = document.getElementById('anonToggleThumb');
   const lbl = document.getElementById('anonToggleLabel');
-  if (tog) tog.style.background = on ? 'rgba(91,196,245,0.2)' : 'rgba(255,59,92,0.15)';
+  if (tog) { tog.style.background = on ? 'rgba(91,196,245,0.2)' : 'rgba(255,59,92,0.15)'; tog.style.borderColor = on ? 'rgba(91,196,245,0.4)' : 'rgba(255,59,92,0.3)'; }
   if (thumb) thumb.style.left = on ? '22px' : '4px';
-  if (lbl) lbl.textContent = on ? 'POST ANONYMOUSLY — name hidden' : 'POST WITH NAME — visible to others';
+  if (lbl) lbl.textContent = on ? 'POST ANONYMOUSLY — name hidden' : 'POST ANONYMOUSLY — off (name shown)';
 }
 
 // ==================== RATE CONDITIONS ====================
