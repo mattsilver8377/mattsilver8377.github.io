@@ -26,7 +26,7 @@
   .prog-fill{height:100%;background:var(--green);border-radius:2px;transition:width 0.3s;width:0%;}
 
   /* Map */
-  #map{flex:1;min-height:150px;background:#0a2d52;}
+  #map{background:#0a2d52;height:300px;}
 
   /* Controls */
   .controls{flex-shrink:0;background:var(--mid);border-top:1px solid var(--border);padding:10px 14px;display:flex;flex-direction:column;gap:8px;}
@@ -387,32 +387,41 @@ function showToast(msg){
 
 // Init map with OpenStreetMap (always works)
 window.addEventListener('load',()=>{
-  // Force the map div to have explicit height before Leaflet init
+  // Give the map a fixed height first - simplest reliable approach
   const mapEl = document.getElementById('map');
-  const appEl = document.querySelector('.app');
-  const hdrEl = document.querySelector('.hdr');
-  const ctrlEl = document.querySelector('.controls');
-
-  function setMapHeight() {
-    const total = appEl.clientHeight;
-    const hdrH = hdrEl.offsetHeight;
-    const ctrlH = ctrlEl.offsetHeight;
-    const mapH = total - hdrH - ctrlH;
-    mapEl.style.height = Math.max(mapH, 150) + 'px';
-    if (map) map.invalidateSize();
-  }
-
-  // Set height before init
-  setMapHeight();
+  mapEl.style.height = '300px';
 
   map=L.map('map',{zoomControl:true,attributionControl:true});
 
-  // CartoDB tiles — work from local file:// without CORS issues
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
     attribution:'© OpenStreetMap © CartoDB',
     subdomains:'abcd',
-    maxZoom:19
+    maxZoom:19,
+    crossOrigin: true
   }).addTo(map);
+
+  // After map loads, adjust to fill available space
+  setTimeout(() => {
+    const hdrH = document.querySelector('.hdr').offsetHeight;
+    const ctrlH = document.querySelector('.controls').offsetHeight;
+    const winH = window.innerHeight;
+    const newH = Math.max(winH - hdrH - ctrlH, 150);
+    mapEl.style.height = newH + 'px';
+    map.invalidateSize(true);
+  }, 200);
+
+  setTimeout(() => { map.invalidateSize(true); }, 800);
+
+  window.addEventListener('resize', () => {
+    const hdrH = document.querySelector('.hdr').offsetHeight;
+    const ctrlH = document.querySelector('.controls').offsetHeight;
+    const newH = Math.max(window.innerHeight - hdrH - ctrlH, 150);
+    mapEl.style.height = newH + 'px';
+    map.invalidateSize(true);
+  });
+
+  loadSpot(0);
+});
 
   // Invalidate size after tiles load
   setTimeout(() => { setMapHeight(); map.invalidateSize(); }, 100);
