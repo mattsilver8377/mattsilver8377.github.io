@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>WingCast — Beach Bearing Admin</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -18,62 +16,50 @@
   html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow Condensed',sans-serif;}
   .app{display:flex;flex-direction:column;height:100vh;}
 
-  /* Header */
   .hdr{background:var(--mid);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .hdr-title{font-family:'Bebas Neue';font-size:18px;color:var(--green);letter-spacing:2px;flex:1;}
   .hdr-prog{font-size:12px;color:var(--muted);letter-spacing:1px;white-space:nowrap;}
   .prog-bar{height:3px;background:var(--surface);border-radius:2px;margin-top:3px;}
   .prog-fill{height:100%;background:var(--green);border-radius:2px;transition:width 0.3s;width:0%;}
 
-  /* Map */
-  #map{background:#0a2d52;height:300px;}
+  #mapFrame{flex:1;min-height:0;width:100%;border:none;display:block;}
 
-  /* Controls */
   .controls{flex-shrink:0;background:var(--mid);border-top:1px solid var(--border);padding:10px 14px;display:flex;flex-direction:column;gap:8px;}
 
   .spot-name{font-family:'Bebas Neue';font-size:20px;color:var(--text);letter-spacing:2px;line-height:1;}
   .spot-num{font-size:11px;color:var(--dim);letter-spacing:2px;}
 
   .bearing-row{display:flex;align-items:center;gap:14px;}
-
-  /* Compass */
   .compass-wrap{position:relative;width:96px;height:96px;flex-shrink:0;cursor:grab;touch-action:none;}
   .compass-wrap:active{cursor:grabbing;}
   .compass-wrap svg{width:100%;height:100%;}
-
   .bearing-info{flex:1;}
   .bearing-deg{font-family:'Bebas Neue';font-size:48px;color:var(--green);line-height:1;letter-spacing:2px;}
   .bearing-card{font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
-
   .key-row{display:flex;gap:10px;margin-top:4px;}
   .key-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
   .key-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 
-  /* Slider */
   .slider-row{display:flex;align-items:center;gap:8px;}
   .slider-lbl{font-size:10px;color:var(--dim);white-space:nowrap;}
   input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--surface);border-radius:2px;outline:none;}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--green);border:2px solid var(--bg);cursor:pointer;}
 
-  /* Dir chips */
   .dirs-row{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;}
   .dir-chip{padding:3px 1px;border-radius:4px;font-size:9px;font-weight:700;text-align:center;border:1px solid transparent;}
   .dir-offshore{background:rgba(255,59,92,0.2);border-color:rgba(255,59,92,0.4);color:var(--red);}
   .dir-onshore{background:rgba(91,196,245,0.15);border-color:rgba(91,196,245,0.3);color:var(--sky);}
   .dir-cross{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.25);color:var(--green);}
 
-  /* Buttons */
   .nav-row{display:flex;gap:8px;}
   .btn{flex:1;padding:11px 8px;border-radius:10px;font-family:'Barlow Condensed';font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;border:1px solid;transition:all 0.15s;}
   .btn-prev{background:rgba(91,196,245,0.08);border-color:rgba(91,196,245,0.25);color:var(--sky);}
   .btn-save{background:rgba(0,229,160,0.15);border-color:rgba(0,229,160,0.4);color:var(--green);flex:2;}
   .btn-skip{background:rgba(91,196,245,0.08);border-color:rgba(91,196,245,0.25);color:var(--sky);}
 
-  /* Toast */
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--mid);border:1px solid var(--green);border-radius:10px;padding:10px 20px;font-family:'Barlow Condensed';font-size:14px;color:var(--green);z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
   .toast.show{opacity:1;}
 
-  /* Export */
   .export-overlay{display:none;position:fixed;inset:0;background:rgba(4,13,26,0.97);z-index:2000;padding:16px;flex-direction:column;gap:10px;}
   .export-overlay.open{display:flex;}
   .export-overlay h2{font-family:'Bebas Neue';font-size:22px;color:var(--green);letter-spacing:2px;}
@@ -94,7 +80,7 @@
     <button class="btn" style="flex:none;padding:7px 12px;font-size:12px;background:rgba(247,201,72,0.1);border-color:rgba(247,201,72,0.3);color:var(--yellow);" onclick="showExport()">📋 EXPORT</button>
   </div>
 
-  <div id="map"></div>
+  <iframe id="mapFrame" src="" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
 
   <div class="controls">
     <div>
@@ -230,16 +216,21 @@ const DIR_DEG={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180
 const savedBearings={};
 SPOTS.forEach(s=>savedBearings[s.key]=s.bearing);
 const confirmed=new Set();
-
-let currentIdx=0,currentBearing=160,map,spotMarker,bLine,oLine,aMarker;
+let currentIdx=0, currentBearing=160;
 
 function classifyDir(d,beach){
   let diff=((DIR_DEG[d]-beach)+360)%360;
   if(diff>180)diff=360-diff;
   return diff<=60?'onshore':diff<=90?'cross':'offshore';
 }
-
 function toCard(b){return ALL_DIRS[Math.round(((b%360)+360)%360/22.5)%16];}
+
+function updateMap(lat,lon){
+  // Use OpenStreetMap embed — always works, no API key
+  const zoom=14;
+  const frame=document.getElementById('mapFrame');
+  frame.src=`https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.05},${lat-0.03},${lon+0.05},${lat+0.03}&layer=mapnik&marker=${lat},${lon}`;
+}
 
 function setBearing(val,updateSlider=true){
   currentBearing=((val%360)+360)%360;
@@ -249,36 +240,10 @@ function setBearing(val,updateSlider=true){
   document.getElementById('bearingCard').textContent=`${c} — WATER TO ${c}`;
   if(updateSlider)document.getElementById('bearingSlider').value=b;
   document.getElementById('arrowGrp').setAttribute('transform',`rotate(${b},50,50)`);
-  updateDirs();
-  updateMapLine();
-}
-
-function updateDirs(){
   document.getElementById('dirsGrid').innerHTML=ALL_DIRS.map(d=>{
-    const c=classifyDir(d,currentBearing);
-    return`<div class="dir-chip dir-${c}">${d}</div>`;
+    const cls=classifyDir(d,currentBearing);
+    return`<div class="dir-chip dir-${cls}">${d}</div>`;
   }).join('');
-}
-
-function updateMapLine(){
-  if(!map)return;
-  const s=SPOTS[currentIdx];
-  [bLine,oLine,aMarker].forEach(l=>{if(l)try{map.removeLayer(l);}catch(e){}});
-  const rad=currentBearing*Math.PI/180;
-  const cosLat=Math.cos(s.lat*Math.PI/180)||1;
-  const d=0.022;
-  const eLat=s.lat+Math.cos(rad)*d;
-  const eLon=s.lon+Math.sin(rad)*d/cosLat;
-  bLine=L.polyline([[s.lat,s.lon],[eLat,eLon]],{color:'#00e5a0',weight:4,opacity:0.9}).addTo(map);
-  const or=(currentBearing+180)*Math.PI/180;
-  const oLat=s.lat+Math.cos(or)*d*0.5;
-  const oLon=s.lon+Math.sin(or)*d*0.5/cosLat;
-  oLine=L.polyline([[s.lat,s.lon],[oLat,oLon]],{color:'#ff3b5c',weight:3,opacity:0.5,dashArray:'5,4'}).addTo(map);
-  const ic=L.divIcon({
-    html:`<div style="border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:16px solid #00e5a0;transform:rotate(${currentBearing}deg);transform-origin:50% 100%;margin-top:-16px;margin-left:-7px;"></div>`,
-    iconSize:[0,0],iconAnchor:[0,16]
-  });
-  aMarker=L.marker([eLat,eLon],{icon:ic}).addTo(map);
 }
 
 function loadSpot(idx){
@@ -288,10 +253,7 @@ function loadSpot(idx){
   document.getElementById('spotNum').textContent=`SPOT ${idx+1} OF ${SPOTS.length}`;
   document.getElementById('spotName').textContent=s.name;
   updateProgress();
-  if(spotMarker)try{map.removeLayer(spotMarker);}catch(e){}
-  const ic=L.divIcon({html:`<div style="width:16px;height:16px;border-radius:50%;background:#f7c948;border:2px solid #040d1a;box-shadow:0 0 10px #f7c948;"></div>`,iconSize:[16,16],iconAnchor:[8,8]});
-  spotMarker=L.marker([s.lat,s.lon],{icon:ic}).addTo(map);
-  map.flyTo([s.lat,s.lon],13,{duration:0.6});
+  updateMap(s.lat,s.lon);
   setBearing(currentBearing);
 }
 
@@ -310,7 +272,6 @@ function saveAndNext(){
   if(currentIdx<SPOTS.length-1)loadSpot(currentIdx+1);
   else showToast('🎉 All done! Tap EXPORT.');
 }
-
 function nextSpot(){if(currentIdx<SPOTS.length-1)loadSpot(currentIdx+1);}
 function prevSpot(){if(currentIdx>0)loadSpot(currentIdx-1);}
 
@@ -366,15 +327,12 @@ function generateExport(){
     lines.push(`  off:   ${off.join(', ')}`);
     lines.push('');
   });
-  lines.push('='.repeat(50));
-  lines.push('PASTE TO CLAUDE:');
-  lines.push('='.repeat(50),'');
+  lines.push('='.repeat(50),'PASTE TO CLAUDE:','='.repeat(50),'');
   lines.push('const CORRECTED={');
   SPOTS.forEach(s=>lines.push(`  ${s.key}:${Math.round(savedBearings[s.key])},`));
   lines.push('};');
   return lines.join('\n');
 }
-
 function showExport(){document.getElementById('exportText').value=generateExport();document.getElementById('exportOverlay').classList.add('open');}
 function closeExport(){document.getElementById('exportOverlay').classList.remove('open');}
 function copyExport(){navigator.clipboard.writeText(document.getElementById('exportText').value).then(()=>showToast('✓ Copied!'));}
@@ -385,44 +343,6 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// Init map with OpenStreetMap (always works)
-window.addEventListener('load',()=>{
-  const mapEl = document.getElementById('map');
-  mapEl.style.height = '300px';
-
-  map = L.map('map', {zoomControl:true, attributionControl:true});
-
-  // Stadia Maps — free, no API key, works on GitHub Pages
-  L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '© Stadia Maps © OpenStreetMap'
-  }).addTo(map);
-
-  // Resize to fill available space after render
-  function resize() {
-    const hdrH = document.querySelector('.hdr').offsetHeight || 50;
-    const ctrlH = document.querySelector('.controls').offsetHeight || 300;
-    const newH = Math.max(window.innerHeight - hdrH - ctrlH, 180);
-    mapEl.style.height = newH + 'px';
-    map.invalidateSize(true);
-  }
-
-  setTimeout(resize, 300);
-  setTimeout(resize, 1000);
-  window.addEventListener('resize', resize);
-
-  // Load first spot after map is ready
-  setTimeout(() => loadSpot(0), 100);
-});
-
-  // Invalidate size after tiles load
-  setTimeout(() => { setMapHeight(); map.invalidateSize(); }, 100);
-  setTimeout(() => { setMapHeight(); map.invalidateSize(); }, 500);
-  window.addEventListener('resize', setMapHeight);
-
-  loadSpot(0);
-});
-
 window.addEventListener('keydown',e=>{
   if(e.target.tagName==='TEXTAREA')return;
   if(e.key==='Enter'||e.key==='ArrowRight')saveAndNext();
@@ -430,6 +350,9 @@ window.addEventListener('keydown',e=>{
   else if(e.key==='ArrowUp')setBearing(currentBearing-5);
   else if(e.key==='ArrowDown')setBearing(currentBearing+5);
 });
+
+// Init
+window.addEventListener('load',()=>loadSpot(0));
 </script>
 </body>
 </html>
