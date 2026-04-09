@@ -4824,7 +4824,12 @@ function selectPlan(plan) {
 function startCheckout() {
   const link = STRIPE_LINKS[selectedPlan];
   if (!link || link.includes('REPLACE')) { alert('Stripe links not yet configured — coming soon!'); return; }
-  window.open(wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link, '_blank');
+  const fullLink = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
+  // Show feedback immediately so user knows it's working
+  const btn = document.getElementById('proCheckoutBtn');
+  if (btn) { btn.textContent = 'LOADING CHECKOUT...'; btn.disabled = true; }
+  // Navigate to Stripe — avoids popup blockers entirely
+  setTimeout(() => { window.location.href = fullLink; }, 150);
 }
 
 window.addEventListener('load', () => setTimeout(initFirebaseAuth, 600));
