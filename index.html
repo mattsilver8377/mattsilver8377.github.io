@@ -4578,21 +4578,34 @@ window.addEventListener('load', () => {
         <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--wind-green);font-size:16px;">✓</span><div><div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--text-bright);font-weight:700;">PUSH WIND ALERTS</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-dim);">Notified when your spot hits target wind</div></div></div>
       </div>
     </div>
+
+    <!-- Plan selector label -->
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:2px;text-align:center;margin-bottom:10px;">SELECT A PLAN</div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
       <div onclick="selectPlan('monthly')" id="planMonthly" style="padding:18px 14px;background:var(--glass);border:2px solid var(--glass-border);border-radius:14px;text-align:center;cursor:pointer;">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--text-bright);letter-spacing:1px;margin-bottom:6px;">MONTHLY</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--sky);line-height:1;">£1.99</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin-top:4px;">£1.99 / month</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin-top:4px;">per month</div>
       </div>
-      <div onclick="selectPlan('yearly')" id="planYearly" style="padding:18px 14px;background:rgba(247,201,72,0.06);border:2px solid rgba(247,201,72,0.5);border-radius:14px;text-align:center;cursor:pointer;position:relative;">
+      <div onclick="selectPlan('yearly')" id="planYearly" style="padding:18px 14px;background:rgba(247,201,72,0.08);border:2px solid var(--wind-yellow);border-radius:14px;text-align:center;cursor:pointer;position:relative;">
         <div style="position:absolute;top:-1px;right:-1px;background:var(--wind-yellow);color:var(--ocean-deep);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:0 12px 0 8px;">BEST VALUE</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--text-bright);letter-spacing:1px;margin-bottom:6px;">YEARLY</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--wind-yellow);line-height:1;">£14.99</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--wind-yellow);margin-top:4px;">£1.25 / month</div>
       </div>
     </div>
-    <div style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--wind-green);letter-spacing:1px;margin-bottom:16px;">🎉 7 day free trial included in all plans</div>
-    <a id="proCheckoutBtn" href="https://buy.stripe.com/00w28q20j30q3FMamAgQE03" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,rgba(247,201,72,0.3),rgba(255,140,66,0.2));border:1px solid rgba(247,201,72,0.6);border-radius:12px;color:var(--wind-yellow);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:3px;cursor:pointer;margin-bottom:12px;text-align:center;text-decoration:none;box-sizing:border-box;">START 7-DAY FREE TRIAL →</a>
+
+    <!-- CTA button — text updates when plan selected -->
+    <a id="proCheckoutBtn" href="https://buy.stripe.com/00w28q20j30q3FMamAgQE03" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,rgba(247,201,72,0.3),rgba(255,140,66,0.2));border:1px solid rgba(247,201,72,0.6);border-radius:12px;color:var(--wind-yellow);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:8px;text-align:center;text-decoration:none;box-sizing:border-box;line-height:1.4;">
+      7 DAYS FREE, THEN £14.99 / YEAR
+    </a>
+
+    <!-- Reassurance line -->
+    <div style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-muted);letter-spacing:1px;margin-bottom:16px;">
+      Cancel any time · No charge during trial · Manage in Stripe
+    </div>
+
     <div style="background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
       <span style="font-size:20px;">💚</span>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);letter-spacing:1px;">Don't want to subscribe? WingCast will always be free to use.</div>
@@ -4825,9 +4838,8 @@ function selectPlan(plan) {
     y.style.borderColor = 'rgba(247,201,72,0.3)';
     y.style.background  = 'rgba(247,201,72,0.04)';
     if (btn) {
-      const link = STRIPE_LINKS.monthly;
-      btn.href = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
-      btn.textContent = 'START FREE TRIAL — £1.99/mo →';
+      btn.href = wcUser ? `${STRIPE_LINKS.monthly}?prefilled_email=${encodeURIComponent(wcUser.email)}` : STRIPE_LINKS.monthly;
+      btn.innerHTML = '7 DAYS FREE, THEN £1.99 / MONTH';
     }
   } else {
     y.style.borderColor = 'var(--wind-yellow)';
@@ -4835,9 +4847,8 @@ function selectPlan(plan) {
     m.style.borderColor = 'var(--glass-border)';
     m.style.background  = 'var(--glass)';
     if (btn) {
-      const link = STRIPE_LINKS.yearly;
-      btn.href = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
-      btn.textContent = 'START FREE TRIAL — £14.99/yr →';
+      btn.href = wcUser ? `${STRIPE_LINKS.yearly}?prefilled_email=${encodeURIComponent(wcUser.email)}` : STRIPE_LINKS.yearly;
+      btn.innerHTML = '7 DAYS FREE, THEN £14.99 / YEAR';
     }
   }
 }
