@@ -4592,7 +4592,7 @@ window.addEventListener('load', () => {
       </div>
     </div>
     <div style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--wind-green);letter-spacing:1px;margin-bottom:16px;">🎉 7 day free trial included in all plans</div>
-    <a id="proCheckoutBtn" href="https://buy.stripe.com/fZu5kC9sLbwW5NUamAgQE01" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,rgba(247,201,72,0.3),rgba(255,140,66,0.2));border:1px solid rgba(247,201,72,0.6);border-radius:12px;color:var(--wind-yellow);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:3px;cursor:pointer;margin-bottom:12px;text-align:center;text-decoration:none;box-sizing:border-box;">START FREE TRIAL →</a>
+    <a id="proCheckoutBtn" href="https://buy.stripe.com/fZu5kC9sLbwW5NUamAgQE01" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,rgba(247,201,72,0.3),rgba(255,140,66,0.2));border:1px solid rgba(247,201,72,0.6);border-radius:12px;color:var(--wind-yellow);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:3px;cursor:pointer;margin-bottom:12px;text-align:center;text-decoration:none;box-sizing:border-box;">START 7-DAY FREE TRIAL →</a>
     <div style="background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
       <span style="font-size:20px;">💚</span>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);letter-spacing:1px;">Don't want to subscribe? WingCast will always be free to use.</div>
@@ -4814,18 +4814,31 @@ function closeProModal() { document.getElementById('proModal').style.display = '
 
 function selectPlan(plan) {
   selectedPlan = plan;
-  const m = document.getElementById('planMonthly'), y = document.getElementById('planYearly');
-  if (!m||!y) return;
-  m.style.borderColor = plan==='monthly' ? 'var(--sky)' : 'var(--glass-border)';
-  m.style.background  = plan==='monthly' ? 'rgba(91,196,245,0.1)' : 'var(--glass)';
-  y.style.borderColor = plan==='yearly'  ? 'var(--wind-yellow)' : 'rgba(247,201,72,0.3)';
-  y.style.background  = plan==='yearly'  ? 'rgba(247,201,72,0.1)' : 'rgba(247,201,72,0.04)';
-  // Update anchor href directly
+  const m = document.getElementById('planMonthly');
+  const y = document.getElementById('planYearly');
   const btn = document.getElementById('proCheckoutBtn');
-  if (btn) {
-    const link = STRIPE_LINKS[plan];
-    btn.href = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
-    btn.textContent = `START FREE TRIAL → (${plan === 'yearly' ? '£14.99/yr' : '£1.99/mo'})`;
+  if (!m || !y) return;
+
+  if (plan === 'monthly') {
+    m.style.borderColor = 'var(--sky)';
+    m.style.background  = 'rgba(91,196,245,0.15)';
+    y.style.borderColor = 'rgba(247,201,72,0.3)';
+    y.style.background  = 'rgba(247,201,72,0.04)';
+    if (btn) {
+      const link = STRIPE_LINKS.monthly;
+      btn.href = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
+      btn.textContent = 'START FREE TRIAL — £1.99/mo →';
+    }
+  } else {
+    y.style.borderColor = 'var(--wind-yellow)';
+    y.style.background  = 'rgba(247,201,72,0.12)';
+    m.style.borderColor = 'var(--glass-border)';
+    m.style.background  = 'var(--glass)';
+    if (btn) {
+      const link = STRIPE_LINKS.yearly;
+      btn.href = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
+      btn.textContent = 'START FREE TRIAL — £14.99/yr →';
+    }
   }
 }
 
