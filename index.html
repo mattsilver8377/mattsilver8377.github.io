@@ -4806,9 +4806,10 @@ function openAccountMenu() {
 
 function openProModal() {
   if (!wcUser) { openAuthModal(); showAuthError('Create a free account first to upgrade. 👆', true); return; }
-  selectPlan('yearly');
   document.getElementById('proModal').style.display = 'block';
+  selectPlan('yearly');
 }
+
 function closeProModal() { document.getElementById('proModal').style.display = 'none'; }
 
 function selectPlan(plan) {
@@ -4819,11 +4820,12 @@ function selectPlan(plan) {
   m.style.background  = plan==='monthly' ? 'rgba(91,196,245,0.1)' : 'var(--glass)';
   y.style.borderColor = plan==='yearly'  ? 'var(--wind-yellow)' : 'rgba(247,201,72,0.3)';
   y.style.background  = plan==='yearly'  ? 'rgba(247,201,72,0.1)' : 'rgba(247,201,72,0.04)';
-  // Update the anchor href directly — most reliable cross-browser approach
+  // Update anchor href directly
   const btn = document.getElementById('proCheckoutBtn');
   if (btn) {
     const link = STRIPE_LINKS[plan];
     btn.href = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
+    btn.textContent = `START FREE TRIAL → (${plan === 'yearly' ? '£14.99/yr' : '£1.99/mo'})`;
   }
 }
 
