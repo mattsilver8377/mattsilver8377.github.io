@@ -4825,11 +4825,20 @@ function startCheckout() {
   const link = STRIPE_LINKS[selectedPlan];
   if (!link || link.includes('REPLACE')) { alert('Stripe links not yet configured — coming soon!'); return; }
   const fullLink = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
-  // Show feedback immediately so user knows it's working
   const btn = document.getElementById('proCheckoutBtn');
-  if (btn) { btn.textContent = 'LOADING CHECKOUT...'; btn.disabled = true; }
-  // Navigate to Stripe — avoids popup blockers entirely
-  setTimeout(() => { window.location.href = fullLink; }, 150);
+  if (btn) { btn.textContent = 'OPENING STRIPE...'; btn.disabled = true; }
+  // Use <a> click trick — works in PWA standalone mode where window.location can be blocked
+  const a = document.createElement('a');
+  a.href = fullLink;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Reset button after delay in case navigation doesn't leave the page
+  setTimeout(() => {
+    if (btn) { btn.textContent = 'START FREE TRIAL →'; btn.disabled = false; }
+  }, 3000);
 }
 
 window.addEventListener('load', () => setTimeout(initFirebaseAuth, 600));
