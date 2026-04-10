@@ -4695,7 +4695,7 @@ async function deleteUserAccount() {
   }
 }
 
-let _fbAuth = null, _fbDb = null, wcUser = null, wcUserPro = false;
+let _fbAuth = null, _fbDb = null, wcUser = null, wcUserPro = false, wcUserData = {};
 let selectedPlan = 'yearly';
 const FREE_DAY_LIMIT = 3;
 const STRIPE_LINKS = { monthly: 'https://buy.stripe.com/6oU28q8oH8kK3FMcuIgQE02', yearly: 'https://buy.stripe.com/00w28q20j30q3FMamAgQE03' };
@@ -4712,10 +4712,20 @@ function initFirebaseAuth() {
       if (user) {
         try {
           const doc = await _fbDb.collection('users').doc(user.uid).get();
-          if (doc.exists) { wcUserPro = doc.data().isPro === true; }
-          else { await _fbDb.collection('users').doc(user.uid).set({ email: user.email, isPro: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); wcUserPro = false; }
-        } catch(e) { wcUserPro = false; }
-      } else { wcUserPro = false; }
+          if (doc.exists) {
+            const data = doc.data();
+            wcUserPro = data.isPro === true;
+            wcUserData = data; // store full doc for trial info etc
+          } else {
+            await _fbDb.collection('users').doc(user.uid).set({
+              email: user.email, isPro: false,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            wcUserPro = false;
+            wcUserData = {};
+          }
+        } catch(e) { wcUserPro = false; wcUserData = {}; }
+      } else { wcUserPro = false; wcUserData = {}; }
       updateAuthUI(); applyProGating();
     });
   } catch(e) { console.warn('[WingCast] Auth init:', e.message); }
@@ -4733,11 +4743,31 @@ function updateAuthUI() {
     const acctEmail = document.getElementById('accountEmail');
     const proStatus = document.getElementById('accountProStatus');
     const freeStatus = document.getElementById('accountFreeStatus');
+    const proNote = document.getElementById('accountProNote');
     if (acctSec) acctSec.style.display = 'block';
     if (acctEmail) acctEmail.textContent = 'Signed in as: ' + wcUser.email;
     if (proStatus) proStatus.style.display = wcUserPro ? 'block' : 'none';
     if (freeStatus) freeStatus.style.display = wcUserPro ? 'none' : 'block';
-    // Set billing portal URL (Stripe Customer Portal)
+
+    // Show trial countdown if on trial
+    if (proNote && wcUserData) {
+      const status = wcUserData.stripeStatus;
+      if (status === 'trialing' && wcUserData.trialEnd) {
+        const daysLeft = Math.ceil((wcUserData.trialEnd.toDate() - new Date()) / 86400000);
+        proNote.textContent = daysLeft > 0
+          ? `🎉 Free trial — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`
+          : 'Trial ending today';
+        proNote.style.color = daysLeft <= 2 ? 'var(--wind-yellow)' : 'var(--text-muted)';
+      } else if (status === 'active') {
+        proNote.textContent = 'Thanks for supporting WingCast! ⭐';
+        proNote.style.color = 'var(--text-muted)';
+      } else if (wcUserPro) {
+        proNote.textContent = 'Pro access active';
+        proNote.style.color = 'var(--text-muted)';
+      }
+    }
+
+    // Set billing portal URL
     const manageBtn = document.getElementById('manageSubBtn');
     if (manageBtn) manageBtn.href = `https://billing.stripe.com/p/login/aFa5kC48r58y0tAeCQgQE00?prefilled_email=${encodeURIComponent(wcUser.email)}`;
   } else {
