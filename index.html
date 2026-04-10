@@ -4727,6 +4727,8 @@ function initFirebaseAuth() {
         } catch(e) { wcUserPro = false; wcUserData = {}; }
       } else { wcUserPro = false; wcUserData = {}; }
       updateAuthUI(); applyProGating();
+      // Re-render tabs now Pro status is known — clears/adds lock icons correctly
+      if (typeof renderDayTabs === 'function') renderDayTabs();
     });
   } catch(e) { console.warn('[WingCast] Auth init:', e.message); }
 }
@@ -4752,12 +4754,17 @@ function updateAuthUI() {
     // Show trial countdown if on trial
     if (proNote && wcUserData) {
       const status = wcUserData.stripeStatus;
-      if (status === 'trialing' && wcUserData.trialEnd) {
-        const daysLeft = Math.ceil((wcUserData.trialEnd.toDate() - new Date()) / 86400000);
-        proNote.textContent = daysLeft > 0
-          ? `🎉 Free trial — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`
-          : 'Trial ending today';
-        proNote.style.color = daysLeft <= 2 ? 'var(--wind-yellow)' : 'var(--text-muted)';
+      if (status === 'trialing') {
+        if (wcUserData.trialEnd) {
+          const daysLeft = Math.ceil((wcUserData.trialEnd.toDate() - new Date()) / 86400000);
+          proNote.textContent = daysLeft > 0
+            ? `🎉 Free trial — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`
+            : 'Trial ending today';
+          proNote.style.color = daysLeft <= 2 ? 'var(--wind-yellow)' : 'var(--text-muted)';
+        } else {
+          proNote.textContent = '🎉 7-day free trial active — cancel any time';
+          proNote.style.color = 'var(--text-muted)';
+        }
       } else if (status === 'active') {
         proNote.textContent = 'Thanks for supporting WingCast! ⭐';
         proNote.style.color = 'var(--text-muted)';
