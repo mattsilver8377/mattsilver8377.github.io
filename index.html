@@ -2116,6 +2116,8 @@ function nextUnit() {
   updateMapLegend();
   profile.unit = windUnit;
   _store.set('wc_profile', JSON.stringify(profile));
+  // Update alert wind inputs to show values in new unit
+  if (typeof renderNotifPrefs === 'function') renderNotifPrefs();
 }
 
 function unitLabel(u) {
@@ -3760,6 +3762,7 @@ function setUnitPref(u) {
   updateUnitPrefBtns(); renderBanner(); renderStats(); renderForecastTable();
   updateMapLegend();
   profile.unit=u; _store.set('wc_profile', JSON.stringify(profile));
+  if (typeof renderNotifPrefs === 'function') renderNotifPrefs();
 }
 
 function updateUnitPrefBtns() {
