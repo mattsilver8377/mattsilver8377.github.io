@@ -4468,12 +4468,45 @@ function updatePushBtn() {
   if (Notification.permission === 'granted' && profile.pushEnabled) {
     btn.textContent = '✓ ENABLED';
     btn.style.background = 'rgba(0,229,160,0.25)';
-    if (statusText) statusText.textContent = '✓ Push notifications active on this device.';
+    btn.style.borderColor = 'rgba(0,229,160,0.4)';
+    btn.style.color = 'var(--wind-green)';
+    btn.onclick = disablePush;
+    if (statusText) statusText.textContent = '✓ Push notifications active — tap to disable.';
   } else if (Notification.permission === 'denied') {
     btn.textContent = 'BLOCKED';
     btn.disabled = true;
     if (statusText) statusText.textContent = '⚠ Blocked — enable in browser/phone settings.';
+  } else {
+    btn.textContent = 'ENABLE';
+    btn.style.background = 'rgba(0,229,160,0.15)';
+    btn.style.borderColor = 'rgba(0,229,160,0.4)';
+    btn.style.color = 'var(--wind-green)';
+    btn.onclick = requestPushPermission;
+    if (statusText) statusText.textContent = '';
   }
+}
+
+async function disablePush() {
+  const btn = document.getElementById('pushEnableBtn');
+  const statusText = document.getElementById('pushStatusText');
+  profile.pushEnabled = false;
+  profile.fcmToken = null;
+  _store.set('wc_profile', JSON.stringify(profile));
+  // Update Firestore
+  if (_fbDb && wcUser) {
+    try {
+      await _fbDb.collection('users').doc(wcUser.uid).update({
+        pushEnabled: false,
+        fcmToken: null
+      });
+    } catch(e) { console.warn('Could not update push status:', e.message); }
+  }
+  if (btn) {
+    btn.textContent = 'ENABLE';
+    btn.style.background = 'rgba(0,229,160,0.15)';
+    btn.onclick = requestPushPermission;
+  }
+  if (statusText) statusText.textContent = 'Push notifications disabled.';
 }
 
 // Call updatePushBtn when settings opens
