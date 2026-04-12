@@ -22,10 +22,10 @@ messaging.onBackgroundMessage(payload => {
   self.registration.showNotification(title || 'WingCast Wind Alert 🏄', {
     body: body || 'Conditions look good at your spot!',
     icon: icon || '/icons/icon-192x192.png',
-    badge: '/icons/icon-96x96.png',
+    badge: '/notification-icon.png',
     tag: 'wingcast-alert',
     renotify: true,
-    data: { url: 'https://mattsilver8377.github.io/' },
+    data: { url: 'https://wingcast.co.uk/' },
     actions: [
       { action: 'view', title: 'View Forecast' },
       { action: 'dismiss', title: 'Dismiss' }
@@ -37,11 +37,11 @@ messaging.onBackgroundMessage(payload => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   if (event.action === 'dismiss') return;
-  const url = event.notification.data?.url || 'https://mattsilver8377.github.io/';
+  const url = event.notification.data?.url || 'https://wingcast.co.uk/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url.includes('mattsilver8377.github.io') && 'focus' in client) {
+        if (client.url.includes('wingcast.co.uk') && 'focus' in client) {
           return client.focus();
         }
       }

@@ -1,14 +1,14 @@
 {
-  "id": "/",
+  "id": "https://wingcast.co.uk/",
   "name": "WingCast — Wingfoil Forecast",
   "short_name": "WingCast",
   "description": "7-day wingfoil forecast with wind, swell and conditions for wingfoilers. Wing size recommendations, offshore warnings, session logging and more.",
-  "start_url": "/index.html",
+  "start_url": "https://wingcast.co.uk/index.html",
   "display": "standalone",
   "background_color": "#040d1a",
   "theme_color": "#040d1a",
   "orientation": "portrait-primary",
-  "scope": "/",
+  "scope": "https://wingcast.co.uk/",
   "lang": "en-GB",
   "dir": "ltr",
   "categories": ["weather", "sports"],
@@ -36,9 +36,8 @@
       "name": "Today's Forecast",
       "short_name": "Forecast",
       "description": "Check today's wingfoil conditions",
-      "url": "/index.html",
+      "url": "https://wingcast.co.uk/index.html",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
 }
-

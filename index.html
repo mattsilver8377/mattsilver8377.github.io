@@ -18,9 +18,9 @@
 <!-- Open Graph for WhatsApp/social sharing -->
 <meta property="og:title" content="WingCast — Wingfoil Forecast">
 <meta property="og:description" content="Live wind, tides & wingfoil conditions for 74 UK spots. Free forecast app.">
-<meta property="og:url" content="https://mattsilver8377.github.io/">
+<meta property="og:url" content="https://wingcast.co.uk/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://mattsilver8377.github.io/icons/icon-512x512.png">
+<meta property="og:image" content="https://wingcast.co.uk/icons/icon-512x512.png">
 
 <!-- PWA Manifest -->
 <link rel="manifest" href="/manifest.json">
@@ -1217,7 +1217,7 @@
     <div class="profile-section">
       <div class="profile-section-title">💬 CONTACT & FEEDBACK</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);margin-bottom:10px;">Questions, subscription help, bugs or suggestions:</div>
-      <a href="mailto:support@wingcast.app" style="display:block;padding:12px;background:rgba(91,196,245,0.08);border:1px solid rgba(91,196,245,0.2);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;text-align:center;margin-bottom:14px;">✉ support@wingcast.app</a>
+      <a href="/cdn-cgi/l/email-protection#64171114140b161024130d0a03070517104a051414" style="display:block;padding:12px;background:rgba(91,196,245,0.08);border:1px solid rgba(91,196,245,0.2);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;text-align:center;margin-bottom:14px;">✉ <span class="__cf_email__" data-cfemail="22515752524d505662554b4c45414351560c435252">[email&#160;protected]</span></a>
       <textarea id="feedbackText" rows="3" placeholder="Or send feedback directly here..." class="profile-input" style="resize:vertical;margin-bottom:10px;"></textarea>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><label class="profile-label">NAME (optional)</label><input id="feedbackName" type="text" placeholder="Anonymous" class="profile-input"></div>
@@ -1522,7 +1522,7 @@
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // Safe localStorage wrapper — handles Edge tracking prevention blocking storage
 const _store = {
   get(k) { try { return localStorage.getItem(k); } catch(e) { return null; } },
@@ -5694,11 +5694,11 @@ function shareToWhatsApp() {
   if (!weekData.length || !weekData[0].hours) return;
   const now = weekData[0].hours[3];
   const cond = getWingCondition(now.wind, now.gust, now.swell, now.dir, currentLocation);
-  const text = `🏄 ${loc?.name||currentLocation} — ${cond.label} today!\n💨 ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir} (gusts ${cvtWind(now.gust)})\n🌊 Swell: ${now.swell}m\n📱 WingCast: https://mattsilver8377.github.io/`;
+  const text = `🏄 ${loc?.name||currentLocation} — ${cond.label} today!\n💨 ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir} (gusts ${cvtWind(now.gust)})\n🌊 Swell: ${now.swell}m\n📱 WingCast: https://wingcast.co.uk/`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 function copyShareLink() {
-  navigator.clipboard.writeText('https://mattsilver8377.github.io/').then(() => showToast('✓ Link copied!'));
+  navigator.clipboard.writeText('https://wingcast.co.uk/').then(() => showToast('✓ Link copied!'));
 }
 async function shareNative() {
   const loc = getAllLocations()[currentLocation];
@@ -5706,7 +5706,7 @@ async function shareNative() {
   const now = weekData[0].hours[3];
   const cond = getWingCondition(now.wind, now.gust, now.swell, now.dir, currentLocation);
   if (navigator.share) {
-    await navigator.share({ title:`${loc?.name||currentLocation} — ${cond.label} | WingCast`, text:`${cond.label} at ${loc?.name||currentLocation}! ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir}`, url:'https://mattsilver8377.github.io/' });
+    await navigator.share({ title:`${loc?.name||currentLocation} — ${cond.label} | WingCast`, text:`${cond.label} at ${loc?.name||currentLocation}! ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir}`, url:'https://wingcast.co.uk/' });
   } else { copyShareLink(); }
 }
 
@@ -5737,9 +5737,4 @@ function saveOnboarding() {
   const weight = document.getElementById('obWeight').value;
   const spot = document.getElementById('obHomeSpot').value;
   if (name) { profile.name = name; const p = document.getElementById('pName'); if(p) p.value = name; }
-  if (weight) { profile.weight = weight; const p = document.getElementById('pWeight'); if(p) p.value = weight; }
-  if (spot) { profile.homeSpot = spot; }
-  _store.set('wc_profile', JSON.stringify(profile));
-  closeOnboardingModal();
-  showToast('✓ Profile saved — welcome to WingCast! 🤙');
-}
+  if (weight) { profile.weight = weight; const p = doc
