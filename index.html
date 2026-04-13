@@ -577,7 +577,7 @@
   .nav-btn { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--text-muted);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;cursor:pointer;transition:color 0.2s;padding:0; }
   .nav-btn.active { color:var(--wind-green); }
   .nav-btn.active svg { filter:drop-shadow(0 0 4px var(--wind-green)); }
-  main, #sessionsPanel, #profilePanel { padding-bottom:80px; }
+  main, #sessionsPanel, #profilePanel { padding-bottom:100px; }
 
   /* ====== PROFILE SHARED ====== */
   .profile-section { background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;padding:18px;margin-bottom:14px; }
@@ -1067,7 +1067,7 @@
 </nav>
 
 <!-- ====== SESSIONS PANEL ====== -->
-<div id="sessionsPanel" style="display:none;padding-bottom:80px;">
+<div id="sessionsPanel" style="display:none;padding-bottom:100px;">
   <div style="margin:20px 24px 0;display:flex;gap:10px;">
     <button onclick="openLogSession()" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(0,229,160,0.15),rgba(91,196,245,0.1));border:1px solid rgba(0,229,160,0.35);border-radius:12px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>LOG SESSION
@@ -1092,7 +1092,7 @@
 </div>
 
 <!-- ====== PROFILE PANEL ====== -->
-<div id="profilePanel" style="display:none;padding-bottom:80px;">
+<div id="profilePanel" style="display:none;padding-bottom:100px;">
   <div style="margin:20px 24px 0;">
     <!-- Header with avatar -->
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:18px;background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;">
@@ -1217,7 +1217,7 @@
     <div class="profile-section">
       <div class="profile-section-title">💬 CONTACT & FEEDBACK</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);margin-bottom:10px;">Questions, subscription help, bugs or suggestions:</div>
-      <a href="/cdn-cgi/l/email-protection#64171114140b161024130d0a03070517104a051414" style="display:block;padding:12px;background:rgba(91,196,245,0.08);border:1px solid rgba(91,196,245,0.2);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;text-align:center;margin-bottom:14px;">✉ <span class="__cf_email__" data-cfemail="22515752524d505662554b4c45414351560c435252">[email&#160;protected]</span></a>
+      <a id="supportEmailLink" href="#" onclick="this.href='mai'+'lto:'+'support@wingcast.co.uk'" style="display:block;padding:12px;background:rgba(91,196,245,0.08);border:1px solid rgba(91,196,245,0.2);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;text-align:center;margin-bottom:14px;">✉ support@wingcast.co.uk</a>
       <textarea id="feedbackText" rows="3" placeholder="Or send feedback directly here..." class="profile-input" style="resize:vertical;margin-bottom:10px;"></textarea>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><label class="profile-label">NAME (optional)</label><input id="feedbackName" type="text" placeholder="Anonymous" class="profile-input"></div>
