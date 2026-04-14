@@ -1,8 +1,8 @@
-// WingCast Service Worker v32 - Firebase Push Notifications
+// WingCast Service Worker v33 - Firebase Push Notifications
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-const CACHE_NAME = 'wingcast-v32';
+const CACHE_NAME = 'wingcast-v33';
 
 firebase.initializeApp({
   apiKey: "AIzaSyBywWIHDEloGao0lHnAISsYHvJqATzU0Q8",
@@ -16,15 +16,24 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Handle background push messages (app closed or in background)
-messaging.onBackgroundMessage(payload => {
+messaging.onBackgroundMessage(async payload => {
   console.log('[SW] Background push received:', payload);
+
+  // If app is open in foreground, don't show a second notification
+  const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const appOpen = clientList.some(c => c.url.includes('wingcast.co.uk') && c.visibilityState === 'visible');
+  if (appOpen) {
+    console.log('[SW] App is open — skipping background notification to avoid duplicate');
+    return;
+  }
+
   const { title, body, icon } = payload.notification || {};
   self.registration.showNotification(title || 'WingCast Wind Alert 🏄', {
     body: body || 'Conditions look good at your spot!',
     icon: icon || '/icons/icon-192x192.png',
     badge: '/notification-icon.png',
     tag: 'wingcast-alert',
-    renotify: true,
+    renotify: false,
     data: { url: 'https://wingcast.co.uk/' },
     actions: [
       { action: 'view', title: 'View Forecast' },
