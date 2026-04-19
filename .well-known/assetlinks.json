@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "uk.co.wingcast.app",
       "sha256_cert_fingerprints": [
-        "93:B0:09:D7:92:50:F2:91:58:74:52:61:67:1D:AE:C3:49:E6:8C:CF:1C:6A:07:41:EE:A8:E2:1A:90:F3:2D:51"
+        "93:B0:09:D7:92:50:F2:91:58:74:52:61:67:1D:AE:C3:49:E6:8C:CF:1C:6A:07:41:EE:A8:E2:1A:90:F3:2D:51",
+        "F9:8F:EF:7E:1B:8D:BF:F6:CA:43:35:B7:A4:5F:DD:0F:0C:C1:93:25:B8:85:50:8A:8E:AD:97:8F:B9:C3:AC:B4"
       ]
     }
   }
