@@ -1357,10 +1357,10 @@
         <span id="anonToggleLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);">POST ANONYMOUSLY — off (name shown)</span>
       </div>
     </div>
-    <!-- Wind alerts -->
+    <!-- Wind alerts — multi-alert system -->
     <div style="margin-bottom:20px;">
       <label class="profile-label" style="font-size:12px;letter-spacing:2px;">🔔 WIND ALERTS</label>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin:4px 0 10px;">Alert appears on Sessions tab when your spot hits your target window.</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin:4px 0 10px;">Set up multiple alerts for different spots and conditions.</div>
       <!-- Push notification enable button -->
       <div id="pushNotifSection" style="margin-bottom:14px;padding:10px 14px;background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.2);border-radius:8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -1371,42 +1371,55 @@
           <button id="pushEnableBtn" onclick="requestPushPermission()" style="padding:7px 14px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:6px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;white-space:nowrap;">ENABLE</button>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div><label class="profile-label">WATCH LOCATION</label><select id="alertLocation" onchange="saveNotifPrefs()" class="profile-select"></select></div>
-        <div><label class="profile-label">WIND SPEED (<span id="alertWindUnitLabel">KTS</span>)</label>
-          <div style="display:flex;gap:4px;align-items:center;">
-            <input id="alertMinWind" type="number" placeholder="Min" oninput="saveNotifPrefs()" class="profile-input" style="flex:1;text-align:center;">
-            <span style="color:var(--text-muted);font-size:11px;">–</span>
-            <input id="alertMaxWind" type="number" placeholder="Max" oninput="saveNotifPrefs()" class="profile-input" style="flex:1;text-align:center;">
+      <!-- Saved alerts list -->
+      <div id="savedAlertsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+      <!-- Add new alert button -->
+      <button onclick="openAddAlertPanel()" style="width:100%;padding:10px;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:12px;">+ ADD ALERT</button>
+      <!-- Add/Edit alert panel (hidden by default) -->
+      <div id="addAlertPanel" style="display:none;background:rgba(7,30,56,0.8);border:1px solid rgba(91,196,245,0.2);border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--sky);font-weight:700;letter-spacing:2px;" id="addAlertPanelTitle">NEW ALERT</div>
+          <button onclick="closeAddAlertPanel()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div><label class="profile-label">WATCH LOCATION</label><select id="alertLocation" onchange="saveNotifPrefs()" class="profile-select"></select></div>
+          <div><label class="profile-label">WIND SPEED (<span id="alertWindUnitLabel">KTS</span>)</label>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <input id="alertMinWind" type="number" placeholder="Min" oninput="saveNotifPrefs()" class="profile-input" style="flex:1;text-align:center;">
+              <span style="color:var(--text-muted);font-size:11px;">–</span>
+              <input id="alertMaxWind" type="number" placeholder="Max" oninput="saveNotifPrefs()" class="profile-input" style="flex:1;text-align:center;">
+            </div>
           </div>
         </div>
-      </div>
-      <div style="margin-bottom:10px;">
-        <label class="profile-label">ALLOWED DIRECTIONS</label>
-        <div id="alertDirPicker" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;"></div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);margin-top:5px;">Tap to toggle. Red = offshore included.</div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px;">
-        <div><label class="profile-label">DAYS OF WEEK</label><div id="alertDayPicker" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;"></div></div>
-        <div><label class="profile-label">HOW FAR AHEAD</label>
-          <select id="alertLookahead" onchange="saveNotifPrefs()" class="profile-select">
-            <option value="0">Same day</option><option value="1" selected>1 day ahead</option>
-            <option value="2">2 days ahead</option><option value="3">3 days ahead</option>
+        <div style="margin-bottom:10px;">
+          <label class="profile-label">ALLOWED DIRECTIONS</label>
+          <div id="alertDirPicker" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;"></div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);margin-top:5px;">Tap to toggle. Red = offshore included.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px;">
+          <div><label class="profile-label">DAYS OF WEEK</label><div id="alertDayPicker" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;"></div></div>
+          <div><label class="profile-label">HOW FAR AHEAD</label>
+            <select id="alertLookahead" onchange="saveNotifPrefs()" class="profile-select">
+              <option value="0">Same day</option><option value="1" selected>1 day ahead</option>
+              <option value="2">2 days ahead</option><option value="3">3 days ahead</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div><label class="profile-label">FROM</label><input id="alertTimeFrom" type="time" value="07:00" onchange="saveNotifPrefs()" class="profile-input"></div>
+          <div><label class="profile-label">UNTIL</label><input id="alertTimeTo" type="time" value="21:00" onchange="saveNotifPrefs()" class="profile-input"></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="profile-label">REPEAT ALERTS</label>
+          <select id="alertCooldown" onchange="saveNotifPrefs()" class="profile-select">
+            <option value="3">Every 3 hours</option>
+            <option value="6" selected>Every 6 hours (default)</option>
+            <option value="12">Every 12 hours</option>
+            <option value="24">Once per day</option>
           </select>
         </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div><label class="profile-label">FROM</label><input id="alertTimeFrom" type="time" value="07:00" onchange="saveNotifPrefs()" class="profile-input"></div>
-        <div><label class="profile-label">UNTIL</label><input id="alertTimeTo" type="time" value="21:00" onchange="saveNotifPrefs()" class="profile-input"></div>
-      </div>
-      <div style="margin-bottom:10px;">
-        <label class="profile-label">REPEAT ALERTS</label>
-        <select id="alertCooldown" onchange="saveNotifPrefs()" class="profile-select">
-          <option value="3">Every 3 hours</option>
-          <option value="6" selected>Every 6 hours (default)</option>
-          <option value="12">Every 12 hours</option>
-          <option value="24">Once per day</option>
-        </select>
+        <input type="hidden" id="editingAlertId" value="">
+        <button onclick="saveCurrentAlert()" style="width:100%;padding:10px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:8px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;">SAVE ALERT</button>
       </div>
     </div>
     <button onclick="closeSettings()" style="width:100%;padding:12px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.3);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;">DONE</button>
@@ -1530,20 +1543,18 @@ const _store = {
   del(k) { try { localStorage.removeItem(k); } catch(e) {} }
 };
 
-// ── DEFERRED SOCIAL STUBS — replaced by full implementations later ──
-// These ensure onclick handlers never throw ReferenceError
-window.handleCheckIn = function() {
-  if (typeof _fbAuth === 'undefined' || !_fbAuth) {
-    setTimeout(() => window.handleCheckIn(), 500); return;
+// ── DEFERRED SOCIAL STUBS ──
+// Poll until real functions are defined in block 3, then call them
+function _callWhenReady(fnName, args) {
+  if (window['_real_' + fnName]) {
+    window['_real_' + fnName].apply(null, args);
+  } else {
+    setTimeout(() => _callWhenReady(fnName, args), 200);
   }
-  // Will be overwritten by full implementation below
-};
-window.handleRateConditions = function() {
-  if (typeof _fbAuth === 'undefined' || !_fbAuth) {
-    setTimeout(() => window.handleRateConditions(), 500); return;
-  }
-};
-window.handleShare = function() { openShareModal(); };
+}
+window.handleCheckIn = function() { _callWhenReady('handleCheckIn', []); };
+window.handleRateConditions = function() { _callWhenReady('handleRateConditions', []); };
+window.handleShare = function() { _callWhenReady('handleShare', []); };
 
 // ==================== DATA ENGINE ====================
 
@@ -4074,34 +4085,172 @@ function toggleAISummary() {
 // ==================== NOTIFICATIONS / ALERT PREFS ====================
 const ALL_DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
 
+// ── MULTI-ALERT SYSTEM ──
+let _editingAlertId = null;
+
+function getAlerts() {
+  return profile.alerts || [];
+}
+
+function saveAlerts(arr) {
+  profile.alerts = arr;
+  _store.set('wc_profile', JSON.stringify(profile));
+}
+
+function renderSavedAlertsList() {
+  const el = document.getElementById('savedAlertsList');
+  if (!el) return;
+  const alerts = getAlerts();
+  const all = getAllLocations();
+  if (!alerts.length) {
+    el.innerHTML = '<div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-muted);text-align:center;padding:8px;">No alerts set up yet — tap + ADD ALERT</div>';
+    return;
+  }
+  el.innerHTML = alerts.map((a, i) => {
+    const locName = all[a.location]?.name || a.location || 'Unknown spot';
+    const minW = a.minWind ? ktsToDisplay(a.minWind) : '?';
+    const maxW = a.maxWind ? ktsToDisplay(a.maxWind) : '∞';
+    const dirs = (a.dirs || []).slice(0,4).join(', ') + (a.dirs?.length > 4 ? '...' : '');
+    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'].filter((_,j) => (a.days||[0,1,2,3,4,5,6]).includes(j)).join(' ');
+    const enabled = a.enabled !== false;
+    return `<div style="background:${enabled?'rgba(0,229,160,0.06)':'rgba(91,196,245,0.04)'};border:1px solid ${enabled?'rgba(0,229,160,0.25)':'rgba(91,196,245,0.15)'};border-radius:10px;padding:12px 14px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${enabled?'var(--wind-green)':'var(--text-dim)'};">${locName}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-dim);margin-top:2px;">${minW}–${maxW} ${unitLabel(windUnit)} · ${dirs || 'all dirs'}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin-top:1px;">${days} · ${a.timeFrom||'07:00'}–${a.timeTo||'21:00'}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <button onclick="toggleAlertEnabled(${i})" style="padding:4px 10px;border-radius:6px;background:${enabled?'rgba(0,229,160,0.15)':'rgba(255,59,92,0.1)'};border:1px solid ${enabled?'rgba(0,229,160,0.4)':'rgba(255,59,92,0.3)'};color:${enabled?'var(--wind-green)':'var(--wind-red)'};font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">${enabled?'ON':'OFF'}</button>
+          <button onclick="editAlert(${i})" style="padding:4px 10px;border-radius:6px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.25);color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">EDIT</button>
+          <button onclick="deleteAlert(${i})" style="padding:4px 8px;border-radius:6px;background:rgba(255,59,92,0.08);border:1px solid rgba(255,59,92,0.2);color:var(--wind-red);font-family:'Barlow Condensed',sans-serif;font-size:13px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddAlertPanel() {
+  _editingAlertId = null;
+  const panel = document.getElementById('addAlertPanel');
+  const title = document.getElementById('addAlertPanelTitle');
+  const editId = document.getElementById('editingAlertId');
+  if (panel) panel.style.display = 'block';
+  if (title) title.textContent = 'NEW ALERT';
+  if (editId) editId.value = '';
+  // Reset form to defaults
+  const locSel = document.getElementById('alertLocation');
+  if (locSel) locSel.value = profile.homeSpot || currentLocation || '';
+  const mn = document.getElementById('alertMinWind'); if(mn) mn.value = '';
+  const mx = document.getElementById('alertMaxWind'); if(mx) mx.value = '';
+  const la = document.getElementById('alertLookahead'); if(la) la.value = '1';
+  const tf = document.getElementById('alertTimeFrom'); if(tf) tf.value = '07:00';
+  const tt = document.getElementById('alertTimeTo'); if(tt) tt.value = '21:00';
+  const cd = document.getElementById('alertCooldown'); if(cd) cd.value = '6';
+  // Set default dirs for current location
+  profile.notif = { dirs: ['SW','SSW','SE','ESE','S'], days: [0,1,2,3,4,5,6] };
+  renderNotifPrefs();
+}
+
+function closeAddAlertPanel() {
+  const panel = document.getElementById('addAlertPanel');
+  if (panel) panel.style.display = 'none';
+  _editingAlertId = null;
+}
+
+function editAlert(idx) {
+  const alerts = getAlerts();
+  const a = alerts[idx];
+  if (!a) return;
+  _editingAlertId = idx;
+  const panel = document.getElementById('addAlertPanel');
+  const title = document.getElementById('addAlertPanelTitle');
+  const editId = document.getElementById('editingAlertId');
+  if (panel) panel.style.display = 'block';
+  if (title) title.textContent = 'EDIT ALERT';
+  if (editId) editId.value = idx;
+  // Load alert into form
+  profile.notif = { ...a };
+  const locSel = document.getElementById('alertLocation'); if(locSel) locSel.value = a.location || '';
+  const mn = document.getElementById('alertMinWind'); if(mn) mn.value = a.minWind ? ktsToDisplay(a.minWind) : '';
+  const mx = document.getElementById('alertMaxWind'); if(mx) mx.value = a.maxWind ? ktsToDisplay(a.maxWind) : '';
+  const la = document.getElementById('alertLookahead'); if(la) la.value = a.lookahead ?? 1;
+  const tf = document.getElementById('alertTimeFrom'); if(tf) tf.value = a.timeFrom || '07:00';
+  const tt = document.getElementById('alertTimeTo'); if(tt) tt.value = a.timeTo || '21:00';
+  const cd = document.getElementById('alertCooldown'); if(cd) cd.value = a.cooldownHours || 6;
+  renderNotifPrefs();
+}
+
+function saveCurrentAlert() {
+  // Read form values
+  const loc = document.getElementById('alertLocation')?.value;
+  const minWKts = document.getElementById('alertMinWind')?.value ? displayToKts(parseFloat(document.getElementById('alertMinWind').value)) : null;
+  const maxWKts = document.getElementById('alertMaxWind')?.value ? displayToKts(parseFloat(document.getElementById('alertMaxWind').value)) : null;
+  const lookahead = parseInt(document.getElementById('alertLookahead')?.value) || 1;
+  const timeFrom = document.getElementById('alertTimeFrom')?.value || '07:00';
+  const timeTo = document.getElementById('alertTimeTo')?.value || '21:00';
+  const cooldownHours = parseInt(document.getElementById('alertCooldown')?.value) || 6;
+  const dirs = profile.notif?.dirs || [];
+  const days = profile.notif?.days || [0,1,2,3,4,5,6];
+
+  if (!loc) { showToast('⚠ Please select a location'); return; }
+  if (!minWKts) { showToast('⚠ Please set a minimum wind speed'); return; }
+
+  const alertObj = { id: Date.now(), location: loc, minWind: minWKts, maxWind: maxWKts,
+    dirs, days, lookahead, timeFrom, timeTo, cooldownHours, enabled: true };
+
+  const alerts = getAlerts();
+  const editIdx = document.getElementById('editingAlertId')?.value;
+  if (editIdx !== '' && editIdx !== null && editIdx !== undefined && !isNaN(parseInt(editIdx))) {
+    alerts[parseInt(editIdx)] = alertObj;
+  } else {
+    alerts.push(alertObj);
+  }
+  saveAlerts(alerts);
+  closeAddAlertPanel();
+  renderSavedAlertsList();
+  showToast('✓ Alert saved!');
+  // Also keep profile.notif pointing to first active alert for backwards compat
+  const first = alerts.find(a => a.enabled !== false);
+  if (first) profile.notif = { ...first };
+  _store.set('wc_profile', JSON.stringify(profile));
+}
+
+function deleteAlert(idx) {
+  if (!confirm('Delete this alert?')) return;
+  const alerts = getAlerts();
+  alerts.splice(idx, 1);
+  saveAlerts(alerts);
+  renderSavedAlertsList();
+  showToast('Alert deleted');
+}
+
+function toggleAlertEnabled(idx) {
+  const alerts = getAlerts();
+  alerts[idx].enabled = alerts[idx].enabled === false ? true : false;
+  saveAlerts(alerts);
+  renderSavedAlertsList();
+}
+
 function renderNotifPrefs() {
   // Location select
   const locSel = document.getElementById('alertLocation');
   if (locSel) {
+    const curLoc = profile.notif?.location || profile.homeSpot || currentLocation;
     locSel.innerHTML = Object.entries(getAllLocations()).map(([k,v]) =>
-      `<option value="${k}" ${k===(profile.notif?.location||profile.homeSpot||currentLocation)?'selected':''}>${v.name}</option>`
+      `<option value="${k}" ${k===curLoc?'selected':''}>${v.name}</option>`
     ).join('');
   }
-  // Wind range — show in current display unit
+  // Wind unit label
   const unitLbl = document.getElementById('alertWindUnitLabel');
   if (unitLbl) unitLbl.textContent = unitLabel(windUnit);
-  const mn = document.getElementById('alertMinWind');
-  if (mn) mn.value = profile.notif?.minWind ? ktsToDisplay(profile.notif.minWind) : '';
-  const mx = document.getElementById('alertMaxWind');
-  if (mx) mx.value = profile.notif?.maxWind ? ktsToDisplay(profile.notif.maxWind) : '';
-  // Lookahead
-  const la = document.getElementById('alertLookahead'); if(la && profile.notif?.lookahead != null) la.value = profile.notif.lookahead;
-  const cd = document.getElementById('alertCooldown'); if(cd && profile.notif?.cooldownHours) cd.value = profile.notif.cooldownHours;
-  // Time window
-  const tf = document.getElementById('alertTimeFrom'); if(tf && profile.notif?.timeFrom) tf.value = profile.notif.timeFrom;
-  const tt = document.getElementById('alertTimeTo'); if(tt && profile.notif?.timeTo) tt.value = profile.notif.timeTo;
-
   // Direction picker
   const dp = document.getElementById('alertDirPicker');
   if (dp) {
     const selectedDirs = profile.notif?.dirs || ['SW','SSW','SE','ESE','S','W','WSW'];
+    const locKey = profile.notif?.location || currentLocation;
     dp.innerHTML = ALL_DIRS.map(d => {
-      const isOff = getDirType(d, profile.notif?.location || currentLocation) === 'offshore';
+      const isOff = getDirType(d, locKey) === 'offshore';
       const isOn = selectedDirs.includes(d);
       const bg = isOn ? (isOff ? 'rgba(255,59,92,0.3)' : 'rgba(0,229,160,0.2)') : 'rgba(91,196,245,0.05)';
       const border = isOn ? (isOff ? 'rgba(255,59,92,0.6)' : 'rgba(0,229,160,0.4)') : 'var(--glass-border)';
@@ -4109,7 +4258,6 @@ function renderNotifPrefs() {
       return `<button onclick="toggleAlertDir('${d}')" style="padding:5px 8px;border-radius:6px;background:${bg};border:1px solid ${border};color:${col};font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">${d}</button>`;
     }).join('');
   }
-
   // Day picker
   const dyp = document.getElementById('alertDayPicker');
   if (dyp) {
@@ -4120,6 +4268,8 @@ function renderNotifPrefs() {
       return `<button onclick="toggleAlertDay(${i})" style="width:32px;height:32px;border-radius:6px;background:${isOn?'rgba(0,229,160,0.2)':'rgba(91,196,245,0.05)'};border:1px solid ${isOn?'rgba(0,229,160,0.4)':'var(--glass-border)'};color:${isOn?'var(--wind-green)':'var(--text-muted)'};font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">${d}</button>`;
     }).join('');
   }
+  // Render the saved alerts list too
+  renderSavedAlertsList();
 }
 
 function toggleAlertDir(dir) {
@@ -4169,37 +4319,56 @@ function saveAlertPref() { saveNotifPrefs(); }
 function checkWindAlertAdvanced() {
   const ae = document.getElementById('windAlertBanner');
   if (!ae || !weekData.length) return;
-  const n = profile.notif || {};
-  const minW = n.minWind || profile.alertMin;
-  const maxW = n.maxWind || profile.alertMax;
-  if (!minW) { ae.style.display = 'none'; return; }
-
-  const watchLoc = n.location || profile.homeSpot || currentLocation;
-  const allowedDirs = n.dirs || null; // null = all dirs
-  const allowedDays = n.days || [0,1,2,3,4,5,6];
-  const lookahead = n.lookahead != null ? n.lookahead : 1;
-  const timeFrom = n.timeFrom ? parseInt(n.timeFrom.split(':')[0]) : 0;
-  const timeTo = n.timeTo ? parseInt(n.timeTo.split(':')[0]) : 24;
-
-  const hits = [];
-  weekData.slice(0, Math.min(lookahead + 1, 7)).forEach((day, di) => {
-    const dow = day.date.getDay();
-    if (!allowedDays.includes(dow)) return;
-    day.hours.forEach(h => {
-      const hourOfDay = h.hour;
-      if (hourOfDay < timeFrom || hourOfDay > timeTo) return;
-      const inRange = h.wind >= minW && (!maxW || h.wind <= maxW);
-      const dirOk = !allowedDirs || allowedDirs.includes(h.dir);
-      if (inRange && dirOk) hits.push({ di, hour: h.hour, wind: h.wind, dir: h.dir });
+  const all = getAllLocations();
+  
+  // Check ALL active alerts
+  const alerts = getAlerts().filter(a => a.enabled !== false);
+  
+  // Fall back to legacy single notif if no multi-alerts set up
+  if (!alerts.length) {
+    const n = profile.notif || {};
+    const minW = n.minWind || profile.alertMin;
+    if (minW) alerts.push({ ...n, minWind: minW, enabled: true });
+  }
+  
+  if (!alerts.length) { ae.style.display = 'none'; return; }
+  
+  const allHits = [];
+  alerts.forEach(n => {
+    const minW = n.minWind;
+    const maxW = n.maxWind;
+    if (!minW) return;
+    const watchLoc = n.location || profile.homeSpot || currentLocation;
+    const allowedDirs = n.dirs || null;
+    const allowedDays = n.days || [0,1,2,3,4,5,6];
+    const lookahead = n.lookahead != null ? n.lookahead : 1;
+    const timeFrom = n.timeFrom ? parseInt(n.timeFrom.split(':')[0]) : 0;
+    const timeTo = n.timeTo ? parseInt(n.timeTo.split(':')[0]) : 24;
+    weekData.slice(0, Math.min(lookahead + 1, 7)).forEach((day, di) => {
+      const dow = day.date.getDay();
+      if (!allowedDays.includes(dow)) return;
+      day.hours.forEach(h => {
+        if (h.hour < timeFrom || h.hour > timeTo) return;
+        const inRange = h.wind >= minW && (!maxW || h.wind <= maxW);
+        const dirOk = !allowedDirs || allowedDirs.includes(h.dir);
+        if (inRange && dirOk) allHits.push({ di, hour: h.hour, wind: h.wind, dir: h.dir, loc: watchLoc, locName: all[watchLoc]?.name||watchLoc, minW, maxW });
+      });
     });
   });
 
-  const all = getAllLocations();
-  if (hits.length) {
-    const f = hits[0];
-    const dl = f.di === 0 ? 'TODAY' : f.di === 1 ? 'TOMORROW' : dayName(weekData[f.di].date, f.di);
+  if (allHits.length) {
+    // Group by location for display
+    const byLoc = {};
+    allHits.forEach(h => {
+      if (!byLoc[h.loc]) byLoc[h.loc] = { locName: h.locName, first: h, count: 0, minW: h.minW, maxW: h.maxW };
+      byLoc[h.loc].count++;
+    });
+    const lines = Object.values(byLoc).map(b => {
+      const dl = b.first.di === 0 ? 'TODAY' : b.first.di === 1 ? 'TOMORROW' : dayName(weekData[b.first.di].date, b.first.di);
+      return `🎯 <strong>${b.locName}</strong> — ${b.minW}–${b.maxW||'∞'} kts · First: ${dl} ${String(b.first.hour).padStart(2,'0')}:00 · ${b.first.wind}kts ${b.first.dir} · ${b.count} windows`;
+    }).join('<br>');
     ae.style.display = 'block';
-    ae.innerHTML = `🎯 WIND ALERT — ${minW}–${maxW||'∞'} kts at ${all[watchLoc]?.name||watchLoc}! First: <strong>${dl} ${String(f.hour).padStart(2,'0')}:00</strong> · ${f.wind} kts ${f.dir} · ${hits.length} matching windows`;
+    ae.innerHTML = lines;
   } else {
     ae.style.display = 'none';
   }
@@ -4599,7 +4768,10 @@ const _origOpenSettings = window.openSettings;
 window.openSettings = function() {
   if (_origOpenSettings) _origOpenSettings();
   setTimeout(updatePushBtn, 100);
-  setTimeout(() => window._renderNotifPrefs(), 150);
+  setTimeout(() => {
+    window._renderNotifPrefs();
+    renderSavedAlertsList();
+  }, 150);
 };
 
 // Init Firebase silently on load (needed for background messages)
@@ -5420,6 +5592,18 @@ function handleGpxFile(event) {
   };
   reader.readAsText(file);
 }
+
+// Register social functions globally as soon as block 3 loads
+window._real_handleCheckIn = handleCheckIn;
+window._real_handleRateConditions = handleRateConditions;
+window._real_handleShare = handleShare;
+window.renderSavedAlertsList = renderSavedAlertsList;
+window.openAddAlertPanel = openAddAlertPanel;
+window.closeAddAlertPanel = closeAddAlertPanel;
+window.editAlert = editAlert;
+window.deleteAlert = deleteAlert;
+window.toggleAlertEnabled = toggleAlertEnabled;
+window.saveCurrentAlert = saveCurrentAlert;
 </script>
 
 <!-- ====== RATE CONDITIONS MODAL ====== -->
@@ -5606,7 +5790,9 @@ function timeAgo(date) {
   return `${Math.floor(mins/60)}h ago`;
 }
 
-async function handleCheckIn() { window.handleCheckIn = handleCheckIn;
+async function handleCheckIn() {
+  window._real_handleCheckIn = handleCheckIn;
+  window.handleCheckIn = handleCheckIn;
   if (!wcUser) { openAuthModal(); return; }
   if (!_fbDb) return;
   const spotKey = currentLocation;
@@ -5630,12 +5816,18 @@ async function handleCheckIn() { window.handleCheckIn = handleCheckIn;
   } catch(e) { console.warn('[WingCast] Check-in error:', e.message); }
 }
 
-function handleRateConditions() { window.handleRateConditions = handleRateConditions;
+function handleRateConditions() {
+  window._real_handleRateConditions = handleRateConditions;
+  window.handleRateConditions = handleRateConditions;
   if (!wcUser) { openAuthModal(); return; }
   openRateModal();
 }
 
-function handleShare() { window.handleShare = handleShare; openShareModal(); }
+function handleShare() {
+  window._real_handleShare = handleShare;
+  window.handleShare = handleShare;
+  openShareModal();
+}
 
 function showToast(msg) {
   let t = document.getElementById('wcToast');
