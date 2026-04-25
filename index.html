@@ -18,9 +18,9 @@
 <!-- Open Graph for WhatsApp/social sharing -->
 <meta property="og:title" content="WingCast — Wingfoil Forecast">
 <meta property="og:description" content="Live wind, tides & wingfoil conditions for 74 UK spots. Free forecast app.">
-<meta property="og:url" content="https://wingcast.co.uk/">
+<meta property="og:url" content="https://mattsilver8377.github.io/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://wingcast.co.uk/icons/icon-512x512.png">
+<meta property="og:image" content="https://mattsilver8377.github.io/icons/icon-512x512.png">
 
 <!-- PWA Manifest -->
 <link rel="manifest" href="/manifest.json">
@@ -573,11 +573,11 @@
   }
 
   /* ====== BOTTOM NAV ====== */
-  #bottomNav { position:fixed;bottom:0;left:0;right:0;height:62px;background:rgba(4,13,26,0.97);border-top:1px solid var(--glass-border);display:flex;z-index:1000;backdrop-filter:blur(16px); }
+  #bottomNav { position:fixed;bottom:0;left:0;right:0;height:62px;background:rgba(4,13,26,0.97);border-top:1px solid var(--glass-border);display:flex;z-index:300;backdrop-filter:blur(16px); }
   .nav-btn { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--text-muted);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;cursor:pointer;transition:color 0.2s;padding:0; }
   .nav-btn.active { color:var(--wind-green); }
   .nav-btn.active svg { filter:drop-shadow(0 0 4px var(--wind-green)); }
-  main, #sessionsPanel, #profilePanel { padding-bottom:100px; }
+  main, #sessionsPanel, #profilePanel { padding-bottom:80px; }
 
   /* ====== PROFILE SHARED ====== */
   .profile-section { background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;padding:18px;margin-bottom:14px; }
@@ -950,7 +950,7 @@
   <span id="offshoreInfoText">Offshore winds = DANGEROUS — always check direction before launching.</span>
 </div>
 
-<main id="main">
+<main>
   <!-- Stats row -->
   <div class="stats-row" id="statsRow"></div>
 
@@ -1067,7 +1067,7 @@
 </nav>
 
 <!-- ====== SESSIONS PANEL ====== -->
-<div id="sessionsPanel" style="display:none;padding-bottom:100px;">
+<div id="sessionsPanel" style="display:none;padding-bottom:80px;">
   <div style="margin:20px 24px 0;display:flex;gap:10px;">
     <button onclick="openLogSession()" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(0,229,160,0.15),rgba(91,196,245,0.1));border:1px solid rgba(0,229,160,0.35);border-radius:12px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>LOG SESSION
@@ -1092,7 +1092,7 @@
 </div>
 
 <!-- ====== PROFILE PANEL ====== -->
-<div id="profilePanel" style="display:none;padding-bottom:100px;">
+<div id="profilePanel" style="display:none;padding-bottom:80px;">
   <div style="margin:20px 24px 0;">
     <!-- Header with avatar -->
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:18px;background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;">
@@ -1187,49 +1187,35 @@
     <!-- Account management -->
     <div class="profile-section" id="accountSection" style="display:none;">
       <div class="profile-section-title">👤 ACCOUNT</div>
-      <div id="accountEmail" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);margin-bottom:10px;"></div>
-
-      <!-- Subscription status — shown when Pro -->
-      <div id="accountProStatus" style="display:none;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;margin-bottom:8px;">
-          <span style="font-size:16px;">⭐</span>
-          <div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--wind-green);letter-spacing:1px;">WINGCAST PRO ACTIVE</div>
-            <div id="accountProNote" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);">Thanks for supporting WingCast!</div>
-          </div>
-        </div>
-        <a href="https://billing.stripe.com/p/login/aFa5kC48r58y0tAeCQgQE00" id="manageSubBtn" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:10px;background:rgba(91,196,245,0.08);border:1px solid rgba(91,196,245,0.2);border-radius:8px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-align:center;text-decoration:none;margin-bottom:6px;">📋 MANAGE / CANCEL SUBSCRIPTION</a>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);text-align:center;letter-spacing:0.5px;">Opens Stripe billing portal — cancel, change plan or update card</div>
-      </div>
-
-      <!-- Not Pro — show upgrade prompt -->
-      <div id="accountFreeStatus" style="display:none;margin-bottom:12px;">
-        <button onclick="switchTab('forecast');openProModal();" style="width:100%;padding:10px;background:rgba(247,201,72,0.1);border:1px solid rgba(247,201,72,0.3);border-radius:8px;color:var(--wind-yellow);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;margin-bottom:6px;">⭐ UPGRADE TO PRO</button>
-      </div>
-
+      <div id="accountEmail" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);margin-bottom:12px;"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <button onclick="openAccountMenu()" style="padding:10px;background:rgba(91,196,245,0.08);border:1px solid rgba(91,196,245,0.2);border-radius:8px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">🔑 SIGN OUT</button>
         <button onclick="deleteUserAccount()" style="padding:10px;background:rgba(255,59,92,0.06);border:1px solid rgba(255,59,92,0.2);border-radius:8px;color:var(--wind-red);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">🗑 DELETE ACCOUNT</button>
       </div>
       <div style="margin-top:8px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:1px;">Deleting your account removes all your data permanently and cancels any subscription.</div>
     </div>
-    <!-- Contact, support & feedback combined -->
+    <!-- Contact & support -->
     <div class="profile-section">
-      <div class="profile-section-title">💬 CONTACT & FEEDBACK</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);margin-bottom:10px;">Questions, subscription help, bugs or suggestions:</div>
-      <a id="supportEmailLink" href="mailto:support@wingcast.co.uk" style="display:block;padding:12px;background:rgba(91,196,245,0.08);border:1px solid rgba(91,196,245,0.2);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;text-align:center;margin-bottom:14px;">✉ support@wingcast.co.uk</a>
-      <textarea id="feedbackText" rows="3" placeholder="Or send feedback directly here..." class="profile-input" style="resize:vertical;margin-bottom:10px;"></textarea>
+      <div class="profile-section-title">📧 CONTACT & SUPPORT</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);margin-bottom:10px;">Questions, subscription help or bug reports:</div>
+      <a href="mailto:support@wingcast.app" style="display:block;padding:12px;background:rgba(91,196,245,0.08);border:1px solid rgba(91,196,245,0.2);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;text-align:center;">✉ support@wingcast.app</a>
+      <div style="margin-top:10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);">
+        <a href="privacy.html" target="_blank" style="color:var(--muted);text-decoration:underline;">Privacy Policy</a>
+        &nbsp;·&nbsp;
+        <a href="terms.html" target="_blank" style="color:var(--muted);text-decoration:underline;">Terms of Service</a>
+      </div>
+    </div>
+    <!-- Feedback at bottom -->
+    <div class="profile-section">
+      <div class="profile-section-title">💬 SEND FEEDBACK</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-dim);margin-bottom:12px;">Ideas, bugs, or suggestions? We'd love to hear from you.</div>
+      <textarea id="feedbackText" rows="3" placeholder="Type your feedback here..." class="profile-input" style="resize:vertical;margin-bottom:10px;"></textarea>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><label class="profile-label">NAME (optional)</label><input id="feedbackName" type="text" placeholder="Anonymous" class="profile-input"></div>
         <div><label class="profile-label">EMAIL (optional)</label><input id="feedbackEmail" type="email" placeholder="for replies" class="profile-input"></div>
       </div>
       <button onclick="submitFeedback()" style="margin-top:12px;width:100%;padding:12px;background:linear-gradient(135deg,rgba(91,196,245,0.2),rgba(0,229,160,0.1));border:1px solid rgba(91,196,245,0.35);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;" id="feedbackBtn">SEND FEEDBACK</button>
       <div id="feedbackStatus" style="font-family:'Barlow Condensed',sans-serif;font-size:12px;text-align:center;margin-top:8px;display:none;"></div>
-      <div style="margin-top:12px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);">
-        <a href="privacy.html" target="_blank" style="color:var(--muted);text-decoration:underline;">Privacy Policy</a>
-        &nbsp;·&nbsp;
-        <a href="terms.html" target="_blank" style="color:var(--muted);text-decoration:underline;">Terms of Service</a>
-      </div>
     </div>
   </div>
 </div>
@@ -1296,11 +1282,11 @@
       <div>
         <label class="profile-label">RATING</label>
         <div style="display:flex;gap:6px;" id="sessionRating">
-          <button onclick="setRating(1)" data-r="1" class="star-btn">☆</button>
-          <button onclick="setRating(2)" data-r="2" class="star-btn">☆</button>
-          <button onclick="setRating(3)" data-r="3" class="star-btn">☆</button>
-          <button onclick="setRating(4)" data-r="4" class="star-btn">☆</button>
-          <button onclick="setRating(5)" data-r="5" class="star-btn">☆</button>
+          <button onclick="setRating(1)" data-r="1" class="star-btn">⭐</button>
+          <button onclick="setRating(2)" data-r="2" class="star-btn">⭐</button>
+          <button onclick="setRating(3)" data-r="3" class="star-btn">⭐</button>
+          <button onclick="setRating(4)" data-r="4" class="star-btn">⭐</button>
+          <button onclick="setRating(5)" data-r="5" class="star-btn">⭐</button>
         </div>
       </div>
       <div><label class="profile-label">NOTES</label><textarea id="sNotes" rows="3" placeholder="How was it?" class="profile-input" style="resize:vertical;"></textarea></div>
@@ -1357,7 +1343,7 @@
         <span id="anonToggleLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);">POST ANONYMOUSLY — off (name shown)</span>
       </div>
     </div>
-    <!-- Wind alerts — multi-alert system -->
+        <!-- Wind alerts — multi-alert system -->
     <div style="margin-bottom:20px;">
       <label class="profile-label" style="font-size:12px;letter-spacing:2px;">🔔 WIND ALERTS</label>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin:4px 0 10px;">Set up multiple alerts for different spots and conditions.</div>
@@ -1417,6 +1403,7 @@
         <input type="hidden" id="editingAlertId" value="">
         <button onclick="window.saveCurrentAlert&&window.saveCurrentAlert()" style="width:100%;padding:10px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:8px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;">SAVE ALERT</button>
       </div>
+    </div>
     </div>
     <button onclick="closeSettings()" style="width:100%;padding:12px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.3);border-radius:10px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;">DONE</button>
   </div>
@@ -2125,8 +2112,6 @@ function nextUnit() {
   updateMapLegend();
   profile.unit = windUnit;
   _store.set('wc_profile', JSON.stringify(profile));
-  // Update alert wind inputs to show values in new unit
-  if (typeof renderNotifPrefs === 'function') renderNotifPrefs();
 }
 
 function unitLabel(u) {
@@ -2161,28 +2146,6 @@ function ktsToBft(kts) {
 
 function windUnitSuffix() {
   return unitLabel(windUnit).toLowerCase();
-}
-
-// Convert from display unit back to KTS for storage
-function displayToKts(val) {
-  if (!val) return null;
-  switch (windUnit) {
-    case 'ms':  return Math.round(val / 0.514444);
-    case 'mph': return Math.round(val / 1.15078);
-    case 'bft': return bftToKts(val);
-    default:    return val;
-  }
-}
-
-// Convert KTS to display unit for showing in inputs
-function ktsToDisplay(kts) {
-  if (!kts) return '';
-  return cvtWind(kts);
-}
-
-function bftToKts(bft) {
-  const table = [0, 1, 4, 7, 11, 17, 22, 28, 34, 41, 48, 56, 64];
-  return table[Math.min(Math.round(bft), 12)] || 0;
 }
 
 let weekData = [];
@@ -2390,24 +2353,14 @@ function renderDayTabs() {
   const tabs = weekData.map((day, i) => {
     const cond = getBestCondition(day);
     const active = i === selectedDay ? 'active' : '';
-    const locked = !wcUserPro && i >= FREE_DAY_LIMIT;
-    const lockedStyle = locked
-      ? 'filter:blur(2px);opacity:0.45;cursor:pointer;position:relative;'
-      : '';
-    const lockedClick = locked
-      ? `onclick="openProModal()"` 
-      : `onclick="selectDay(${i})"`;
-    const lockIcon = locked
-      ? `<span style="position:absolute;top:2px;right:3px;font-size:9px;line-height:1;">⭐</span>`
-      : '';
-    return `<div class="day-tab ${active}" ${lockedClick} style="${lockedStyle}">
-      ${lockIcon}
+    return `<div class="day-tab ${active}" onclick="selectDay(${i})">
       <span class="day-tab-name">${dayName(day.date, i)}</span>
       <span style="font-size:11px;color:var(--text-muted)">${day.date.getDate()}/${day.date.getMonth()+1}</span>
       <div class="day-tab-score ${cond.score}"></div>
     </div>`;
   });
   document.getElementById('dayTabs').innerHTML = tabs.join('');
+  setTimeout(() => { if (typeof applyProGating === 'function') applyProGating(); }, 50);
 }
 
 function getBestCondition(day) {
@@ -3032,6 +2985,14 @@ function setupMapMoveListener() {
 
 
 // Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('firebase-messaging-sw.js')
+      .then(reg => console.log('[WingCast] SW registered:', reg.scope))
+      .catch(err => console.warn('[WingCast] SW failed:', err));
+  });
+}
+
 // Install prompt (Android/Chrome)
 let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
@@ -3083,7 +3044,6 @@ function saveProfile() {
   const l=document.getElementById('pLevel'); if(l) profile.level=l.value;
   const h=document.getElementById('pHomeSpot'); if(h) profile.homeSpot=h.value;
   _store.set('wc_profile', JSON.stringify(profile));
-  if (wcUser) _store.set('wc_profile_' + wcUser.uid, JSON.stringify(profile));
   updateProfileHeader(); rebuildWingRecs();
 }
 
@@ -3764,7 +3724,6 @@ function setUnitPref(u) {
   updateUnitPrefBtns(); renderBanner(); renderStats(); renderForecastTable();
   updateMapLegend();
   profile.unit=u; _store.set('wc_profile', JSON.stringify(profile));
-  if (typeof renderNotifPrefs === 'function') renderNotifPrefs();
 }
 
 function updateUnitPrefBtns() {
@@ -3803,13 +3762,6 @@ function switchTab(tab) {
   const ai=document.getElementById('aiSummaryBar'); if(ai) ai.style.display=(sf&&profile.showAISummary!==false)?'':'none';
   document.getElementById('sessionsPanel').style.display=tab==='sessions'?'':'none';
   document.getElementById('profilePanel').style.display=tab==='profile'?'':'none';
-  document.getElementById('main').style.display=tab==='forecast'?'':'none';
-  // Hide forecast-only elements on other tabs
-  const forecastOnly = ['conditionsBanner','aiSummaryBar','spotWatchers','spotSocialWidget','offlineBadge','offshoreWarning','installBanner'];
-  forecastOnly.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = tab==='forecast' ? '' : 'none';
-  });
   if(tab==='sessions') renderSessions();
   if(tab==='profile') renderProfile();
 }
@@ -3823,12 +3775,7 @@ function fmtDur(hrs) { const h=Math.floor(hrs),m=Math.round((hrs-h)*60); if(h===
 let sessionRating=0;
 function setRating(n) {
   sessionRating=n;
-  document.querySelectorAll('#sessionRating button').forEach((btn,i)=>{ 
-    btn.textContent = i<n ? '★' : '☆';
-    btn.style.background=i<n?'rgba(247,201,72,0.3)':'rgba(247,201,72,0.08)'; 
-    btn.style.borderColor=i<n?'rgba(247,201,72,0.6)':'rgba(247,201,72,0.2)';
-    btn.style.color=i<n?'rgba(247,201,72,1)':'rgba(247,201,72,0.4)';
-  });
+  document.querySelectorAll('#sessionRating button').forEach((btn,i)=>{ btn.style.background=i<n?'rgba(247,201,72,0.3)':'rgba(247,201,72,0.08)'; btn.style.borderColor=i<n?'rgba(247,201,72,0.6)':'rgba(247,201,72,0.2)'; });
 }
 
 function openLogSession() {
@@ -3851,7 +3798,7 @@ function openLogSession() {
   document.getElementById('sWetsuit').innerHTML='<option value="">— select wetsuit —</option>'+(profile.wetsuits||[]).map(w=>'<option value="'+w.thickness+'"'+(wm&&wm.thickness===w.thickness?' selected':'')+'>'+w.name+' ('+w.thickness+')</option>').join('')+'<option value="boardshorts">Boardshorts / None</option>';
   document.getElementById('sDurHrs').value='2'; document.getElementById('sDurMins').value='0';
   document.getElementById('sStart').value=''; document.getElementById('sNotes').value='';
-  sessionRating=0; document.querySelectorAll('#sessionRating button').forEach(btn=>{btn.textContent='☆';btn.style.background='rgba(247,201,72,0.08)';btn.style.borderColor='rgba(247,201,72,0.2)';btn.style.color='rgba(247,201,72,0.4)';});
+  sessionRating=0; document.querySelectorAll('#sessionRating button').forEach(btn=>{btn.style.background='rgba(247,201,72,0.08)';btn.style.borderColor='rgba(247,201,72,0.2)';});
   document.getElementById('logSessionModal').style.display='block';
 }
 
@@ -4067,7 +4014,6 @@ function toggleAISummary() {
 // ==================== NOTIFICATIONS / ALERT PREFS ====================
 const ALL_DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
 
-// renderNotifPrefs handled by multi-alert system in block 3
 function renderNotifPrefs() { if(window._renderSavedAlertsList) window._renderSavedAlertsList(); }
 
 function toggleAlertDir(dir) { if(window._toggleAlertDir) window._toggleAlertDir(dir); }
@@ -4076,8 +4022,7 @@ function toggleAlertDay(day) { if(window._toggleAlertDay) window._toggleAlertDay
 
 function saveNotifPrefs() { /* handled by multi-alert system */ }
 function saveAlertPref() { saveNotifPrefs(); }
-
-function checkWindAlertAdvanced() { if(window._checkWindAlertAdvanced) window._checkWindAlertAdvanced(); }
+function checkWindAlertAdvanced() { if(window._checkWindAlerts) window._checkWindAlerts(); }
 
 // ==================== FEEDBACK ====================
 async function submitFeedback() {
@@ -4232,15 +4177,12 @@ function tutorialNext() {
 function skipTutorial() {
   const modal = document.getElementById('tutorialModal');
   if (modal) modal.style.display = 'none';
-  const seenKey = 'wc_tutorial_' + (wcUser ? wcUser.uid : 'guest');
-  _store.set(seenKey, '1');
   profile.tutorialDone = true;
   _store.set('wc_profile', JSON.stringify(profile));
 }
 
 function checkFirstRun() {
-  const seenKey = 'wc_tutorial_' + (wcUser ? wcUser.uid : 'guest');
-  if (!_store.get(seenKey)) {
+  if (!profile.tutorialDone) {
     showTutorial();
   }
 }
@@ -4263,18 +4205,6 @@ const VAPID_KEY = "BA-zdd561EnP-ippyEbxM8aL1Tyu3Enkt5ZhxW2VMzFE5tQZ1smYhQ0i7CYW0
 
 let _fbApp = null;
 let _fbMessaging = null;
-let _swRegistration = null;
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('firebase-messaging-sw.js')
-      .then(reg => {
-        console.log('[WingCast] SW registered:', reg.scope);
-        _swRegistration = reg;
-      })
-      .catch(err => console.warn('[WingCast] SW failed:', err));
-  });
-}
 
 function initFirebase() {
   if (_fbApp) return _fbApp;
@@ -4282,10 +4212,6 @@ function initFirebase() {
     if (typeof firebase === 'undefined') return null;
     _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
     _fbMessaging = firebase.messaging(_fbApp);
-    // Use our custom SW so Firebase doesn't register a second one
-    if (_swRegistration) {
-      _fbMessaging.useServiceWorker(_swRegistration);
-    }
     // Handle foreground messages — deduplicate
     let _lastPushTs = 0;
     _fbMessaging.onMessage(payload => {
@@ -4400,7 +4326,6 @@ async function savePushPrefsToFirestore(token) {
         timeFrom: n.timeFrom || '07:00',
         timeTo:   n.timeTo   || '21:00',
         lookahead: n.lookahead != null ? n.lookahead : 1,
-        cooldownHours: n.cooldownHours || 6,
       }
     });
     console.log('[WingCast] Alert prefs saved to Firestore');
@@ -4422,45 +4347,12 @@ function updatePushBtn() {
   if (Notification.permission === 'granted' && profile.pushEnabled) {
     btn.textContent = '✓ ENABLED';
     btn.style.background = 'rgba(0,229,160,0.25)';
-    btn.style.borderColor = 'rgba(0,229,160,0.4)';
-    btn.style.color = 'var(--wind-green)';
-    btn.onclick = disablePush;
-    if (statusText) statusText.textContent = '✓ Push notifications active — tap to disable.';
+    if (statusText) statusText.textContent = '✓ Push notifications active on this device.';
   } else if (Notification.permission === 'denied') {
     btn.textContent = 'BLOCKED';
     btn.disabled = true;
     if (statusText) statusText.textContent = '⚠ Blocked — enable in browser/phone settings.';
-  } else {
-    btn.textContent = 'ENABLE';
-    btn.style.background = 'rgba(0,229,160,0.15)';
-    btn.style.borderColor = 'rgba(0,229,160,0.4)';
-    btn.style.color = 'var(--wind-green)';
-    btn.onclick = requestPushPermission;
-    if (statusText) statusText.textContent = '';
   }
-}
-
-async function disablePush() {
-  const btn = document.getElementById('pushEnableBtn');
-  const statusText = document.getElementById('pushStatusText');
-  profile.pushEnabled = false;
-  profile.fcmToken = null;
-  _store.set('wc_profile', JSON.stringify(profile));
-  // Update Firestore
-  if (_fbDb && wcUser) {
-    try {
-      await _fbDb.collection('users').doc(wcUser.uid).update({
-        pushEnabled: false,
-        fcmToken: null
-      });
-    } catch(e) { console.warn('Could not update push status:', e.message); }
-  }
-  if (btn) {
-    btn.textContent = 'ENABLE';
-    btn.style.background = 'rgba(0,229,160,0.15)';
-    btn.onclick = requestPushPermission;
-  }
-  if (statusText) statusText.textContent = 'Push notifications disabled.';
 }
 
 // Call updatePushBtn when settings opens
@@ -4586,34 +4478,21 @@ window.addEventListener('load', () => {
         <div style="display:flex;align-items:center;gap:12px;"><span style="color:var(--wind-green);font-size:16px;">✓</span><div><div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--text-bright);font-weight:700;">PUSH WIND ALERTS</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-dim);">Notified when your spot hits target wind</div></div></div>
       </div>
     </div>
-
-    <!-- Plan selector label -->
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:2px;text-align:center;margin-bottom:10px;">SELECT A PLAN</div>
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
       <div onclick="selectPlan('monthly')" id="planMonthly" style="padding:18px 14px;background:var(--glass);border:2px solid var(--glass-border);border-radius:14px;text-align:center;cursor:pointer;">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--text-bright);letter-spacing:1px;margin-bottom:6px;">MONTHLY</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--sky);line-height:1;">£1.99</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin-top:4px;">per month</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin-top:4px;">£1.99 / month</div>
       </div>
-      <div onclick="selectPlan('yearly')" id="planYearly" style="padding:18px 14px;background:rgba(247,201,72,0.08);border:2px solid var(--wind-yellow);border-radius:14px;text-align:center;cursor:pointer;position:relative;">
+      <div onclick="selectPlan('yearly')" id="planYearly" style="padding:18px 14px;background:rgba(247,201,72,0.06);border:2px solid rgba(247,201,72,0.5);border-radius:14px;text-align:center;cursor:pointer;position:relative;">
         <div style="position:absolute;top:-1px;right:-1px;background:var(--wind-yellow);color:var(--ocean-deep);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:0 12px 0 8px;">BEST VALUE</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--text-bright);letter-spacing:1px;margin-bottom:6px;">YEARLY</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--wind-yellow);line-height:1;">£14.99</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--wind-yellow);margin-top:4px;">£1.25 / month</div>
       </div>
     </div>
-
-    <!-- CTA button — text updates when plan selected -->
-    <a id="proCheckoutBtn" href="https://buy.stripe.com/eVqbJ05cv0Siekq3YcgQE04" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,rgba(247,201,72,0.3),rgba(255,140,66,0.2));border:1px solid rgba(247,201,72,0.6);border-radius:12px;color:var(--wind-yellow);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:8px;text-align:center;text-decoration:none;box-sizing:border-box;line-height:1.4;">
-      7 DAYS FREE, THEN £14.99 / YEAR
-    </a>
-
-    <!-- Reassurance line -->
-    <div style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);letter-spacing:0px;margin-bottom:16px;white-space:nowrap;">
-      ✓ Cancel any time &nbsp;·&nbsp; ✓ No charge in trial &nbsp;·&nbsp; ✓ Instant access
-    </div>
-
+    <div style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--wind-green);letter-spacing:1px;margin-bottom:16px;">🎉 7 day free trial included in all plans</div>
+    <button id="proCheckoutBtn" onclick="startCheckout()" style="width:100%;padding:16px;background:linear-gradient(135deg,rgba(247,201,72,0.3),rgba(255,140,66,0.2));border:1px solid rgba(247,201,72,0.6);border-radius:12px;color:var(--wind-yellow);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:3px;cursor:pointer;margin-bottom:12px;">START FREE TRIAL →</button>
     <div style="background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
       <span style="font-size:20px;">💚</span>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);letter-spacing:1px;">Don't want to subscribe? WingCast will always be free to use.</div>
@@ -4682,10 +4561,10 @@ async function deleteUserAccount() {
   }
 }
 
-let _fbAuth = null, _fbDb = null, wcUser = null, wcUserPro = false, wcUserData = {};
+let _fbAuth = null, _fbDb = null, wcUser = null, wcUserPro = false;
 let selectedPlan = 'yearly';
 const FREE_DAY_LIMIT = 3;
-const STRIPE_LINKS = { monthly: 'https://buy.stripe.com/6oU28q8oH8kK3FMcuIgQE02', yearly: 'https://buy.stripe.com/eVqbJ05cv0Siekq3YcgQE04' };
+const STRIPE_LINKS = { monthly: 'https://buy.stripe.com/6oU28q8oH8kK3FMcuIgQE02', yearly: 'https://buy.stripe.com/fZu5kC9sLbwW5NUamAgQE01' };
 
 function initFirebaseAuth() {
   if (_fbAuth) return;
@@ -4697,34 +4576,13 @@ function initFirebaseAuth() {
     _fbAuth.onAuthStateChanged(async user => {
       wcUser = user;
       if (user) {
-        // Load per-user profile from localStorage
-        const userProfileKey = 'wc_profile_' + user.uid;
-        try { profile = JSON.parse(_store.get(userProfileKey) || _store.get('wc_profile') || '{}'); } catch(e) { profile = {}; }
-        if (!profile.weight)   profile.weight   = 95;
-        if (!profile.level)    profile.level    = 'advanced';
-        if (!profile.quiver)   profile.quiver   = [{size:6.0,name:'6m Wing'},{size:5.5,name:'5.5m Wing'},{size:4.0,name:'4m Wing'}];
-        if (!profile.boards)   profile.boards   = [];
-        if (!profile.wetsuits) profile.wetsuits = [];
-        _store.set(userProfileKey, JSON.stringify(profile));
         try {
           const doc = await _fbDb.collection('users').doc(user.uid).get();
-          if (doc.exists) {
-            const data = doc.data();
-            wcUserPro = data.isPro === true;
-            wcUserData = data;
-          } else {
-            await _fbDb.collection('users').doc(user.uid).set({
-              email: user.email, isPro: false,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            wcUserPro = false;
-            wcUserData = {};
-          }
-        } catch(e) { wcUserPro = false; wcUserData = {}; }
-      } else { wcUserPro = false; wcUserData = {}; }
+          if (doc.exists) { wcUserPro = doc.data().isPro === true; }
+          else { await _fbDb.collection('users').doc(user.uid).set({ email: user.email, isPro: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); wcUserPro = false; }
+        } catch(e) { wcUserPro = false; }
+      } else { wcUserPro = false; }
       updateAuthUI(); applyProGating();
-      // Re-render tabs now Pro status is known — clears/adds lock icons correctly
-      if (typeof renderDayTabs === 'function') renderDayTabs();
     });
   } catch(e) { console.warn('[WingCast] Auth init:', e.message); }
 }
@@ -4739,40 +4597,8 @@ function updateAuthUI() {
     if (emailEl) { emailEl.textContent = wcUser.email; emailEl.style.display = 'block'; }
     const acctSec = document.getElementById('accountSection');
     const acctEmail = document.getElementById('accountEmail');
-    const proStatus = document.getElementById('accountProStatus');
-    const freeStatus = document.getElementById('accountFreeStatus');
-    const proNote = document.getElementById('accountProNote');
     if (acctSec) acctSec.style.display = 'block';
     if (acctEmail) acctEmail.textContent = 'Signed in as: ' + wcUser.email;
-    if (proStatus) proStatus.style.display = wcUserPro ? 'block' : 'none';
-    if (freeStatus) freeStatus.style.display = wcUserPro ? 'none' : 'block';
-
-    // Show trial countdown if on trial
-    if (proNote && wcUserData) {
-      const status = wcUserData.stripeStatus;
-      if (status === 'trialing') {
-        if (wcUserData.trialEnd) {
-          const daysLeft = Math.ceil((wcUserData.trialEnd.toDate() - new Date()) / 86400000);
-          proNote.textContent = daysLeft > 0
-            ? `🎉 Free trial — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`
-            : 'Trial ending today';
-          proNote.style.color = daysLeft <= 2 ? 'var(--wind-yellow)' : 'var(--text-muted)';
-        } else {
-          proNote.textContent = '🎉 7-day free trial active — cancel any time';
-          proNote.style.color = 'var(--text-muted)';
-        }
-      } else if (status === 'active') {
-        proNote.textContent = 'Thanks for supporting WingCast! ⭐';
-        proNote.style.color = 'var(--text-muted)';
-      } else if (wcUserPro) {
-        proNote.textContent = 'Pro access active';
-        proNote.style.color = 'var(--text-muted)';
-      }
-    }
-
-    // Set billing portal URL
-    const manageBtn = document.getElementById('manageSubBtn');
-    if (manageBtn) manageBtn.href = `https://billing.stripe.com/p/login/aFa5kC48r58y0tAeCQgQE00?prefilled_email=${encodeURIComponent(wcUser.email)}`;
   } else {
     if (btn) { btn.textContent = 'SIGN IN'; btn.onclick = openAuthModal; }
     if (emailEl) emailEl.style.display = 'none';
@@ -4790,34 +4616,18 @@ function updateAuthUI() {
 function applyProGating() {
   document.querySelectorAll('.day-tab').forEach((tab, i) => {
     if (!wcUserPro && i >= FREE_DAY_LIMIT) {
-      tab.style.opacity = '0.5';
-      tab.style.filter = 'blur(1.5px)';
-      tab.style.position = 'relative';
-      tab.style.cursor = 'pointer';
+      tab.style.opacity = '0.4';
       tab.title = 'Pro feature — upgrade for full 7-day forecast';
-      // Add lock icon if not already there
-      if (!tab.querySelector('.pro-lock')) {
-        const lock = document.createElement('div');
-        lock.className = 'pro-lock';
-        lock.textContent = '⭐';
-        lock.style.cssText = 'position:absolute;top:2px;right:2px;font-size:9px;line-height:1;';
-        tab.appendChild(lock);
-      }
       tab.onclick = (e) => { e.preventDefault(); e.stopPropagation(); openProModal(); };
     } else {
       tab.style.opacity = '';
-      tab.style.filter = '';
-      tab.style.cursor = '';
       tab.title = '';
-      const lock = tab.querySelector('.pro-lock');
-      if (lock) lock.remove();
     }
   });
 }
 
 let authMode = 'login';
 function openAuthModal() {
-  // Ensure Firebase is initialised before showing auth modal
   if (!_fbAuth) initFirebaseAuth();
   switchAuthTab('login');
   document.getElementById('authModal').style.display = 'block';
@@ -4885,57 +4695,25 @@ function openAccountMenu() {
 
 function openProModal() {
   if (!wcUser) { openAuthModal(); showAuthError('Create a free account first to upgrade. 👆', true); return; }
-  document.getElementById('proModal').style.display = 'block';
   selectPlan('yearly');
+  document.getElementById('proModal').style.display = 'block';
 }
-
 function closeProModal() { document.getElementById('proModal').style.display = 'none'; }
 
 function selectPlan(plan) {
   selectedPlan = plan;
-  const m = document.getElementById('planMonthly');
-  const y = document.getElementById('planYearly');
-  const btn = document.getElementById('proCheckoutBtn');
-  if (!m || !y) return;
-
-  if (plan === 'monthly') {
-    m.style.borderColor = 'var(--sky)';
-    m.style.background  = 'rgba(91,196,245,0.15)';
-    y.style.borderColor = 'rgba(247,201,72,0.3)';
-    y.style.background  = 'rgba(247,201,72,0.04)';
-    if (btn) {
-      btn.href = wcUser ? `${STRIPE_LINKS.monthly}?prefilled_email=${encodeURIComponent(wcUser.email)}` : STRIPE_LINKS.monthly;
-      btn.innerHTML = '7 DAYS FREE, THEN £1.99 / MONTH';
-    }
-  } else {
-    y.style.borderColor = 'var(--wind-yellow)';
-    y.style.background  = 'rgba(247,201,72,0.12)';
-    m.style.borderColor = 'var(--glass-border)';
-    m.style.background  = 'var(--glass)';
-    if (btn) {
-      btn.href = wcUser ? `${STRIPE_LINKS.yearly}?prefilled_email=${encodeURIComponent(wcUser.email)}` : STRIPE_LINKS.yearly;
-      btn.innerHTML = '7 DAYS FREE, THEN £14.99 / YEAR';
-    }
-  }
+  const m = document.getElementById('planMonthly'), y = document.getElementById('planYearly');
+  if (!m||!y) return;
+  m.style.borderColor = plan==='monthly' ? 'var(--sky)' : 'var(--glass-border)';
+  m.style.background  = plan==='monthly' ? 'rgba(91,196,245,0.1)' : 'var(--glass)';
+  y.style.borderColor = plan==='yearly'  ? 'var(--wind-yellow)' : 'rgba(247,201,72,0.3)';
+  y.style.background  = plan==='yearly'  ? 'rgba(247,201,72,0.1)' : 'rgba(247,201,72,0.04)';
 }
 
 function startCheckout() {
   const link = STRIPE_LINKS[selectedPlan];
   if (!link || link.includes('REPLACE')) { alert('Stripe links not yet configured — coming soon!'); return; }
-  const fullLink = wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link;
-  const btn = document.getElementById('proCheckoutBtn');
-  if (btn) { btn.textContent = 'OPENING STRIPE...'; btn.disabled = true; }
-  setTimeout(() => {
-    if (btn) { btn.textContent = 'START FREE TRIAL →'; btn.disabled = false; }
-  }, 3000);
-  // Open in new window — bypasses service worker routing
-  const w = window.open(fullLink, '_blank', 'noopener,noreferrer');
-  if (!w) {
-    // If blocked, fall back to showing the link
-    if (confirm('Your browser blocked the popup. Go to Stripe checkout now?')) {
-      window.location.href = fullLink;
-    }
-  }
+  window.open(wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link, '_blank');
 }
 
 window.addEventListener('load', () => setTimeout(initFirebaseAuth, 600));
@@ -5288,186 +5066,6 @@ function handleGpxFile(event) {
   };
   reader.readAsText(file);
 }
-
-// ==================== MULTI-ALERT SYSTEM ====================
-function getAlerts() { return profile.alerts || []; }
-function saveAlerts(arr) { profile.alerts = arr; _store.set('wc_profile', JSON.stringify(profile)); }
-
-function renderSavedAlertsList() {
-  const el = document.getElementById('savedAlertsList'); if (!el) return;
-  const alerts = getAlerts(); const all = getAllLocations();
-  if (!alerts.length) {
-    el.innerHTML = '<div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-muted);text-align:center;padding:8px 0;">No alerts yet — tap + ADD ALERT</div>'; return;
-  }
-  el.innerHTML = alerts.map((a, i) => {
-    const locName = all[a.location]?.name || a.location || 'Unknown';
-    const minW = a.minWind ? ktsToDisplay(a.minWind) : '?';
-    const maxW = a.maxWind ? ktsToDisplay(a.maxWind) : '∞';
-    const dirs = (a.dirs||[]).slice(0,5).join(' ') + ((a.dirs||[]).length>5?'…':'');
-    const enabled = a.enabled !== false;
-    return `<div style="background:${enabled?'rgba(0,229,160,0.06)':'rgba(91,196,245,0.04)'};border:1px solid ${enabled?'rgba(0,229,160,0.25)':'rgba(91,196,245,0.15)'};border-radius:10px;padding:10px 12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${enabled?'var(--wind-green)':'var(--text-dim)'};">${locName}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">${minW}–${maxW} ${unitLabel(windUnit)} · ${dirs||'all dirs'}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);">${a.timeFrom||'07:00'}–${a.timeTo||'21:00'}</div>
-        </div>
-        <div style="display:flex;gap:5px;flex-shrink:0;">
-          <button onclick="window._toggleAlertEnabled(${i})" style="padding:3px 8px;border-radius:5px;background:${enabled?'rgba(0,229,160,0.15)':'rgba(255,59,92,0.1)'};border:1px solid ${enabled?'rgba(0,229,160,0.4)':'rgba(255,59,92,0.3)'};color:${enabled?'var(--wind-green)':'var(--wind-red)'};font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">${enabled?'ON':'OFF'}</button>
-          <button onclick="window._editAlert(${i})" style="padding:3px 8px;border-radius:5px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.25);color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">EDIT</button>
-          <button onclick="window._deleteAlert(${i})" style="padding:3px 7px;border-radius:5px;background:rgba(255,59,92,0.08);border:1px solid rgba(255,59,92,0.2);color:var(--wind-red);font-size:13px;cursor:pointer;">✕</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function _populateAlertForm(a) {
-  const locSel = document.getElementById('alertLocation');
-  if (locSel) locSel.innerHTML = Object.entries(getAllLocations()).map(([k,v])=>`<option value="${k}"${k===(a?.location||profile.homeSpot||currentLocation)?' selected':''}>${v.name}</option>`).join('');
-  const mn=document.getElementById('alertMinWind'); if(mn) mn.value=a?.minWind?ktsToDisplay(a.minWind):'';
-  const mx=document.getElementById('alertMaxWind'); if(mx) mx.value=a?.maxWind?ktsToDisplay(a.maxWind):'';
-  const la=document.getElementById('alertLookahead'); if(la) la.value=a?.lookahead??1;
-  const tf=document.getElementById('alertTimeFrom'); if(tf) tf.value=a?.timeFrom||'07:00';
-  const tt=document.getElementById('alertTimeTo'); if(tt) tt.value=a?.timeTo||'21:00';
-  const cd=document.getElementById('alertCooldown'); if(cd) cd.value=a?.cooldownHours||6;
-  profile._editNotif={dirs:a?.dirs||['SW','SSW','SE','ESE','S'],days:a?.days||[0,1,2,3,4,5,6]};
-  _renderAlertPickers();
-}
-
-function openAddAlertPanel() {
-  document.getElementById('addAlertPanel').style.display='block';
-  document.getElementById('addAlertPanelTitle').textContent='NEW ALERT';
-  document.getElementById('editingAlertId').value='';
-  _populateAlertForm(null);
-}
-function closeAddAlertPanel() { document.getElementById('addAlertPanel').style.display='none'; }
-
-function _editAlert(idx) {
-  const a=getAlerts()[idx]; if(!a) return;
-  document.getElementById('addAlertPanel').style.display='block';
-  document.getElementById('addAlertPanelTitle').textContent='EDIT ALERT';
-  document.getElementById('editingAlertId').value=String(idx);
-  _populateAlertForm(a);
-}
-
-function _renderAlertPickers() {
-  const locKey=document.getElementById('alertLocation')?.value||currentLocation;
-  const dp=document.getElementById('alertDirPicker');
-  if(dp) dp.innerHTML=ALL_DIRS.map(d=>{
-    const isOff=getDirType(d,locKey)==='offshore';
-    const isOn=(profile._editNotif?.dirs||[]).includes(d);
-    const bg=isOn?(isOff?'rgba(255,59,92,0.3)':'rgba(0,229,160,0.2)'):'rgba(91,196,245,0.05)';
-    const brd=isOn?(isOff?'rgba(255,59,92,0.6)':'rgba(0,229,160,0.4)'):'var(--glass-border)';
-    const col=isOn?(isOff?'var(--wind-red)':'var(--wind-green)'):'var(--text-muted)';
-    return `<button onclick="window._toggleAlertDir('${d}')" style="padding:5px 8px;border-radius:6px;background:${bg};border:1px solid ${brd};color:${col};font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">${d}</button>`;
-  }).join('');
-  const dyp=document.getElementById('alertDayPicker');
-  const dnames=['Su','Mo','Tu','We','Th','Fr','Sa'];
-  if(dyp) dyp.innerHTML=dnames.map((d,i)=>{
-    const isOn=(profile._editNotif?.days||[]).includes(i);
-    return `<button onclick="window._toggleAlertDay(${i})" style="width:32px;height:32px;border-radius:6px;background:${isOn?'rgba(0,229,160,0.2)':'rgba(91,196,245,0.05)'};border:1px solid ${isOn?'rgba(0,229,160,0.4)':'var(--glass-border)'};color:${isOn?'var(--wind-green)':'var(--text-muted)'};font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">${d}</button>`;
-  }).join('');
-}
-
-function _toggleAlertDir(d) {
-  if(!profile._editNotif) profile._editNotif={dirs:[],days:[0,1,2,3,4,5,6]};
-  const dirs=profile._editNotif.dirs; const idx=dirs.indexOf(d);
-  if(idx>=0) dirs.splice(idx,1); else dirs.push(d); _renderAlertPickers();
-}
-function _toggleAlertDay(day) {
-  if(!profile._editNotif) profile._editNotif={dirs:[],days:[0,1,2,3,4,5,6]};
-  const days=profile._editNotif.days; const idx=days.indexOf(day);
-  if(idx>=0) days.splice(idx,1); else days.push(day); _renderAlertPickers();
-}
-
-function saveCurrentAlert() {
-  const loc=document.getElementById('alertLocation')?.value;
-  const minRaw=document.getElementById('alertMinWind')?.value;
-  const maxRaw=document.getElementById('alertMaxWind')?.value;
-  const minWKts=minRaw?displayToKts(parseFloat(minRaw)):null;
-  const maxWKts=maxRaw?displayToKts(parseFloat(maxRaw)):null;
-  if(!loc){showToast('⚠ Please select a spot');return;}
-  if(!minWKts){showToast('⚠ Please set a minimum wind speed');return;}
-  const alertObj={id:Date.now(),location:loc,minWind:minWKts,maxWind:maxWKts,
-    dirs:profile._editNotif?.dirs||[],days:profile._editNotif?.days||[0,1,2,3,4,5,6],
-    lookahead:parseInt(document.getElementById('alertLookahead')?.value)||1,
-    timeFrom:document.getElementById('alertTimeFrom')?.value||'07:00',
-    timeTo:document.getElementById('alertTimeTo')?.value||'21:00',
-    cooldownHours:parseInt(document.getElementById('alertCooldown')?.value)||6,
-    enabled:true};
-  const alerts=getAlerts();
-  const editIdEl=document.getElementById('editingAlertId');
-  const editIdx=editIdEl?.value!==''?parseInt(editIdEl.value):NaN;
-  if(!isNaN(editIdx)&&alerts[editIdx]) alerts[editIdx]=alertObj; else alerts.push(alertObj);
-  saveAlerts(alerts); closeAddAlertPanel(); renderSavedAlertsList(); showToast('✓ Alert saved!');
-  const first=alerts.find(a=>a.enabled!==false); if(first){profile.notif={...first};_store.set('wc_profile',JSON.stringify(profile));}
-}
-
-function _deleteAlert(idx) {
-  if(!confirm('Delete this alert?'))return;
-  const alerts=getAlerts(); alerts.splice(idx,1); saveAlerts(alerts); renderSavedAlertsList(); showToast('Alert deleted');
-}
-function _toggleAlertEnabled(idx) {
-  const alerts=getAlerts(); alerts[idx].enabled=alerts[idx].enabled===false?true:false; saveAlerts(alerts); renderSavedAlertsList();
-}
-
-// Real checkWindAlertAdvanced
-function _checkWindAlertAdvanced() {
-  const ae=document.getElementById('windAlertBanner'); if(!ae||!weekData.length)return;
-  const all=getAllLocations();
-  const alerts=(profile.alerts||[]).filter(a=>a.enabled!==false);
-  if(!alerts.length&&profile.notif?.minWind) alerts.push({...profile.notif,enabled:true});
-  if(!alerts.length){ae.style.display='none';return;}
-  const lines=[];
-  alerts.forEach(n=>{
-    const minW=n.minWind,maxW=n.maxWind; if(!minW)return;
-    const watchLoc=n.location||profile.homeSpot||currentLocation;
-    const allowedDirs=n.dirs?.length?n.dirs:null;
-    const allowedDays=n.days||[0,1,2,3,4,5,6];
-    const lookahead=n.lookahead??1;
-    const timeFrom=n.timeFrom?parseInt(n.timeFrom):0;
-    const timeTo=n.timeTo?parseInt(n.timeTo):24;
-    const hits=[];
-    weekData.slice(0,Math.min(lookahead+1,7)).forEach((day,di)=>{
-      if(!allowedDays.includes(day.date.getDay()))return;
-      day.hours.forEach(h=>{
-        if(h.hour<timeFrom||h.hour>timeTo)return;
-        if(h.wind>=minW&&(!maxW||h.wind<=maxW)&&(!allowedDirs||allowedDirs.includes(h.dir)))
-          hits.push({di,hour:h.hour,wind:h.wind,dir:h.dir});
-      });
-    });
-    if(hits.length){
-      const f=hits[0];
-      const dl=f.di===0?'TODAY':f.di===1?'TOMORROW':dayName(weekData[f.di].date,f.di);
-      lines.push(`🎯 <strong>${all[watchLoc]?.name||watchLoc}</strong> — ${cvtWind(minW)}–${maxW?cvtWind(maxW):'∞'} ${unitLabel(windUnit)} · ${dl} ${String(f.hour).padStart(2,'0')}:00 · ${cvtWind(f.wind)} ${unitLabel(windUnit)} ${f.dir} · ${hits.length} windows`);
-    }
-  });
-  if(lines.length){ae.style.display='block';ae.innerHTML=lines.join('<br>');}
-  else ae.style.display='none';
-}
-
-// Register everything on window so cross-block calls work
-window.handleCheckIn = handleCheckIn;
-window.handleRateConditions = handleRateConditions;
-window.handleShare = handleShare;
-window.openAddAlertPanel = openAddAlertPanel;
-window.closeAddAlertPanel = closeAddAlertPanel;
-window.saveCurrentAlert = saveCurrentAlert;
-window._editAlert = _editAlert;
-window._deleteAlert = _deleteAlert;
-window._toggleAlertEnabled = _toggleAlertEnabled;
-window._toggleAlertDir = _toggleAlertDir;
-window._toggleAlertDay = _toggleAlertDay;
-window._renderSavedAlertsList = renderSavedAlertsList;
-window._checkWindAlertAdvanced = _checkWindAlertAdvanced;
-// Render alerts list when settings opens
-const _origOpenSettings2 = window.openSettings;
-window.openSettings = function() {
-  if(_origOpenSettings2) _origOpenSettings2();
-  setTimeout(updatePushBtn,100);
-  setTimeout(renderSavedAlertsList,200);
-};
 </script>
 
 <!-- ====== RATE CONDITIONS MODAL ====== -->
@@ -5549,7 +5147,6 @@ let _socialUnsubscribe = null;
 function loadSpotSocial(spotKey, _retries) {
   if (!spotKey) return;
   _retries = _retries || 0;
-  // Wait for Firestore to be ready — max 10 retries
   if (!_fbDb) {
     if (_retries >= 10) { renderSpotSocialOffline(); return; }
     setTimeout(() => loadSpotSocial(spotKey, _retries + 1), 1000);
@@ -5565,9 +5162,10 @@ function loadSpotSocial(spotKey, _retries) {
     _socialUnsubscribe = _fbDb.collection('checkins')
       .where('spotKey', '==', spotKey)
       .onSnapshot(snap => {
+        // Filter client-side to avoid needing composite index
         const checkins = snap.docs.map(d => d.data())
           .filter(d => d.time && (d.time.toDate ? d.time.toDate() : new Date(d.time)) > cutoff3h);
-        // Load reports without orderBy to avoid composite index requirement
+        // Load reports
         _fbDb.collection('reports')
           .where('spotKey', '==', spotKey)
           .limit(20)
@@ -5575,18 +5173,10 @@ function loadSpotSocial(spotKey, _retries) {
           .then(rs => {
             const reports = rs.docs.map(d => d.data())
               .filter(d => d.time && (d.time.toDate ? d.time.toDate() : new Date(d.time)) > cutoff24h)
-              .sort((a, b) => {
-                const ta = a.time?.toDate ? a.time.toDate() : new Date(a.time);
-                const tb = b.time?.toDate ? b.time.toDate() : new Date(b.time);
-                return tb - ta;
-              })
-              .slice(0, 8);
+              .sort((a,b)=>{ const ta=a.time?.toDate?a.time.toDate():new Date(a.time); const tb=b.time?.toDate?b.time.toDate():new Date(b.time); return tb-ta; }).slice(0,8);
             renderSpotSocial(checkins, reports, spotKey);
           })
-          .catch(err => {
-            console.warn('[WingCast] Reports fetch error:', err.message);
-            renderSpotSocial(checkins, [], spotKey);
-          });
+          .catch(err=>{ console.warn('[WingCast] Reports:',err.message); renderSpotSocial(checkins,[],spotKey); });
       }, err => {
         console.warn('[WingCast] Social listener error:', err.message);
         renderSpotSocialOffline();
@@ -5805,11 +5395,11 @@ function shareToWhatsApp() {
   if (!weekData.length || !weekData[0].hours) return;
   const now = weekData[0].hours[3];
   const cond = getWingCondition(now.wind, now.gust, now.swell, now.dir, currentLocation);
-  const text = `🏄 ${loc?.name||currentLocation} — ${cond.label} today!\n💨 ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir} (gusts ${cvtWind(now.gust)})\n🌊 Swell: ${now.swell}m\n📱 WingCast: https://wingcast.co.uk/`;
+  const text = `🏄 ${loc?.name||currentLocation} — ${cond.label} today!\n💨 ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir} (gusts ${cvtWind(now.gust)})\n🌊 Swell: ${now.swell}m\n📱 WingCast: https://mattsilver8377.github.io/`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 function copyShareLink() {
-  navigator.clipboard.writeText('https://wingcast.co.uk/').then(() => showToast('✓ Link copied!'));
+  navigator.clipboard.writeText('https://mattsilver8377.github.io/').then(() => showToast('✓ Link copied!'));
 }
 async function shareNative() {
   const loc = getAllLocations()[currentLocation];
@@ -5817,7 +5407,7 @@ async function shareNative() {
   const now = weekData[0].hours[3];
   const cond = getWingCondition(now.wind, now.gust, now.swell, now.dir, currentLocation);
   if (navigator.share) {
-    await navigator.share({ title:`${loc?.name||currentLocation} — ${cond.label} | WingCast`, text:`${cond.label} at ${loc?.name||currentLocation}! ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir}`, url:'https://wingcast.co.uk/' });
+    await navigator.share({ title:`${loc?.name||currentLocation} — ${cond.label} | WingCast`, text:`${cond.label} at ${loc?.name||currentLocation}! ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir}`, url:'https://mattsilver8377.github.io/' });
   } else { copyShareLink(); }
 }
 
@@ -5846,4 +5436,205 @@ function closeOnboardingModal() {
 function saveOnboarding() {
   const name = document.getElementById('obName').value.trim();
   const weight = document.getElementById('obWeight').value;
-  const spot 
+  const spot = document.getElementById('obHomeSpot').value;
+  if (name) { profile.name = name; const p = document.getElementById('pName'); if(p) p.value = name; }
+  if (weight) { profile.weight = weight; const p = document.getElementById('pWeight'); if(p) p.value = weight; }
+  if (spot) { profile.homeSpot = spot; }
+  _store.set('wc_profile', JSON.stringify(profile));
+  closeOnboardingModal();
+  showToast('✓ Profile saved — welcome to WingCast! 🤙');
+}
+
+// Hook skipTutorial to trigger onboarding
+const _origSkipTutorial = window.skipTutorial;
+window.skipTutorial = function() {
+  if (_origSkipTutorial) _origSkipTutorial();
+  setTimeout(checkOnboardingComplete, 400);
+};
+
+// ==================== MULTI-ALERT SYSTEM ====================
+function getAlerts() { return profile.alerts || []; }
+function saveAlerts(arr) { profile.alerts = arr; _store.set('wc_profile', JSON.stringify(profile)); }
+
+function renderSavedAlertsList() {
+  const el = document.getElementById('savedAlertsList'); if (!el) return;
+  const alerts = getAlerts(); const all = getAllLocations();
+  if (!alerts.length) {
+    el.innerHTML = '<div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--text-muted);text-align:center;padding:8px 0;">No alerts yet — tap + ADD ALERT</div>'; return;
+  }
+  el.innerHTML = alerts.map((a, i) => {
+    const locName = all[a.location]?.name || a.location || 'Unknown';
+    const minW = a.minWind ? ktsToDisplay(a.minWind) : '?';
+    const maxW = a.maxWind ? ktsToDisplay(a.maxWind) : '∞';
+    const dirs = (a.dirs||[]).slice(0,5).join(' ') + ((a.dirs||[]).length>5?'…':'');
+    const enabled = a.enabled !== false;
+    return `<div style="background:${enabled?'rgba(0,229,160,0.06)':'rgba(91,196,245,0.04)'};border:1px solid ${enabled?'rgba(0,229,160,0.25)':'rgba(91,196,245,0.15)'};border-radius:10px;padding:10px 12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${enabled?'var(--wind-green)':'var(--text-dim)'};">${locName}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">${minW}–${maxW} ${unitLabel(windUnit)} · ${dirs||'all dirs'}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);">${a.timeFrom||'07:00'}–${a.timeTo||'21:00'}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0;">
+          <button onclick="window._toggleAlertEnabled(${i})" style="padding:3px 8px;border-radius:5px;background:${enabled?'rgba(0,229,160,0.15)':'rgba(255,59,92,0.1)'};border:1px solid ${enabled?'rgba(0,229,160,0.4)':'rgba(255,59,92,0.3)'};color:${enabled?'var(--wind-green)':'var(--wind-red)'};font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">${enabled?'ON':'OFF'}</button>
+          <button onclick="window._editAlert(${i})" style="padding:3px 8px;border-radius:5px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.25);color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">EDIT</button>
+          <button onclick="window._deleteAlert(${i})" style="padding:3px 7px;border-radius:5px;background:rgba(255,59,92,0.08);border:1px solid rgba(255,59,92,0.2);color:var(--wind-red);font-size:13px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _populateAlertForm(a) {
+  const locSel = document.getElementById('alertLocation');
+  if (locSel) locSel.innerHTML = Object.entries(getAllLocations()).map(([k,v])=>`<option value="${k}"${k===(a?.location||profile.homeSpot||currentLocation)?' selected':''}>${v.name}</option>`).join('');
+  const mn=document.getElementById('alertMinWind'); if(mn) mn.value=a?.minWind?ktsToDisplay(a.minWind):'';
+  const mx=document.getElementById('alertMaxWind'); if(mx) mx.value=a?.maxWind?ktsToDisplay(a.maxWind):'';
+  const la=document.getElementById('alertLookahead'); if(la) la.value=a?.lookahead??1;
+  const tf=document.getElementById('alertTimeFrom'); if(tf) tf.value=a?.timeFrom||'07:00';
+  const tt=document.getElementById('alertTimeTo'); if(tt) tt.value=a?.timeTo||'21:00';
+  const cd=document.getElementById('alertCooldown'); if(cd) cd.value=a?.cooldownHours||6;
+  profile._editNotif={dirs:a?.dirs||['SW','SSW','SE','ESE','S'],days:a?.days||[0,1,2,3,4,5,6]};
+  _renderAlertPickers();
+}
+
+function openAddAlertPanel() {
+  const p=document.getElementById('addAlertPanel'); if(p) p.style.display='block';
+  const t=document.getElementById('addAlertPanelTitle'); if(t) t.textContent='NEW ALERT';
+  const e=document.getElementById('editingAlertId'); if(e) e.value='';
+  _populateAlertForm(null);
+}
+function closeAddAlertPanel() { const p=document.getElementById('addAlertPanel'); if(p) p.style.display='none'; }
+
+function _editAlert(idx) {
+  const a=getAlerts()[idx]; if(!a) return;
+  const p=document.getElementById('addAlertPanel'); if(p) p.style.display='block';
+  const t=document.getElementById('addAlertPanelTitle'); if(t) t.textContent='EDIT ALERT';
+  const e=document.getElementById('editingAlertId'); if(e) e.value=String(idx);
+  _populateAlertForm(a);
+}
+
+function _renderAlertPickers() {
+  const locKey=document.getElementById('alertLocation')?.value||currentLocation;
+  const dp=document.getElementById('alertDirPicker');
+  if(dp) dp.innerHTML=ALL_DIRS.map(d=>{
+    const isOff=getDirType(d,locKey)==='offshore';
+    const isOn=(profile._editNotif?.dirs||[]).includes(d);
+    const bg=isOn?(isOff?'rgba(255,59,92,0.3)':'rgba(0,229,160,0.2)'):'rgba(91,196,245,0.05)';
+    const brd=isOn?(isOff?'rgba(255,59,92,0.6)':'rgba(0,229,160,0.4)'):'var(--glass-border)';
+    const col=isOn?(isOff?'var(--wind-red)':'var(--wind-green)'):'var(--text-muted)';
+    return `<button onclick="window._toggleAlertDir('${d}')" style="padding:5px 8px;border-radius:6px;background:${bg};border:1px solid ${brd};color:${col};font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">${d}</button>`;
+  }).join('');
+  const dyp=document.getElementById('alertDayPicker');
+  const dnames=['Su','Mo','Tu','We','Th','Fr','Sa'];
+  if(dyp) dyp.innerHTML=dnames.map((d,i)=>{
+    const isOn=(profile._editNotif?.days||[]).includes(i);
+    return `<button onclick="window._toggleAlertDay(${i})" style="width:32px;height:32px;border-radius:6px;background:${isOn?'rgba(0,229,160,0.2)':'rgba(91,196,245,0.05)'};border:1px solid ${isOn?'rgba(0,229,160,0.4)':'var(--glass-border)'};color:${isOn?'var(--wind-green)':'var(--text-muted)'};font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">${d}</button>`;
+  }).join('');
+}
+
+function _toggleAlertDir(d) {
+  if(!profile._editNotif) profile._editNotif={dirs:[],days:[0,1,2,3,4,5,6]};
+  const dirs=profile._editNotif.dirs; const idx=dirs.indexOf(d);
+  if(idx>=0) dirs.splice(idx,1); else dirs.push(d); _renderAlertPickers();
+}
+function _toggleAlertDay(day) {
+  if(!profile._editNotif) profile._editNotif={dirs:[],days:[0,1,2,3,4,5,6]};
+  const days=profile._editNotif.days; const idx=days.indexOf(day);
+  if(idx>=0) days.splice(idx,1); else days.push(day); _renderAlertPickers();
+}
+
+function saveCurrentAlert() {
+  const loc=document.getElementById('alertLocation')?.value;
+  const minRaw=document.getElementById('alertMinWind')?.value;
+  const maxRaw=document.getElementById('alertMaxWind')?.value;
+  const minWKts=minRaw?displayToKts(parseFloat(minRaw)):null;
+  const maxWKts=maxRaw?displayToKts(parseFloat(maxRaw)):null;
+  if(!loc){showToast('⚠ Please select a spot');return;}
+  if(!minWKts){showToast('⚠ Please set a minimum wind speed');return;}
+  const alertObj={id:Date.now(),location:loc,minWind:minWKts,maxWind:maxWKts,
+    dirs:profile._editNotif?.dirs||[],days:profile._editNotif?.days||[0,1,2,3,4,5,6],
+    lookahead:parseInt(document.getElementById('alertLookahead')?.value)||1,
+    timeFrom:document.getElementById('alertTimeFrom')?.value||'07:00',
+    timeTo:document.getElementById('alertTimeTo')?.value||'21:00',
+    cooldownHours:parseInt(document.getElementById('alertCooldown')?.value)||6,
+    enabled:true};
+  const alerts=getAlerts();
+  const editIdEl=document.getElementById('editingAlertId');
+  const editIdx=editIdEl?.value!==''?parseInt(editIdEl.value):NaN;
+  if(!isNaN(editIdx)&&alerts[editIdx]) alerts[editIdx]=alertObj; else alerts.push(alertObj);
+  saveAlerts(alerts); closeAddAlertPanel(); renderSavedAlertsList(); showToast('✓ Alert saved!');
+  const first=alerts.find(a=>a.enabled!==false);
+  if(first){profile.notif={...first};_store.set('wc_profile',JSON.stringify(profile));}
+}
+
+function _deleteAlert(idx) {
+  if(!confirm('Delete this alert?'))return;
+  const alerts=getAlerts(); alerts.splice(idx,1); saveAlerts(alerts);
+  renderSavedAlertsList(); showToast('Alert deleted');
+}
+function _toggleAlertEnabled(idx) {
+  const alerts=getAlerts();
+  alerts[idx].enabled=alerts[idx].enabled===false?true:false;
+  saveAlerts(alerts); renderSavedAlertsList();
+}
+
+function _checkWindAlerts() {
+  const ae=document.getElementById('windAlertBanner'); if(!ae||!weekData.length)return;
+  const all=getAllLocations();
+  const alerts=(profile.alerts||[]).filter(a=>a.enabled!==false);
+  if(!alerts.length&&profile.notif?.minWind) alerts.push({...profile.notif,enabled:true});
+  if(!alerts.length){ae.style.display='none';return;}
+  const lines=[];
+  alerts.forEach(n=>{
+    const minW=n.minWind,maxW=n.maxWind; if(!minW)return;
+    const watchLoc=n.location||profile.homeSpot||currentLocation;
+    const allowedDirs=n.dirs?.length?n.dirs:null;
+    const allowedDays=n.days||[0,1,2,3,4,5,6];
+    const lookahead=n.lookahead??1;
+    const timeFrom=n.timeFrom?parseInt(n.timeFrom):0;
+    const timeTo=n.timeTo?parseInt(n.timeTo):24;
+    const hits=[];
+    weekData.slice(0,Math.min(lookahead+1,7)).forEach((day,di)=>{
+      if(!allowedDays.includes(day.date.getDay()))return;
+      day.hours.forEach(h=>{
+        if(h.hour<timeFrom||h.hour>timeTo)return;
+        if(h.wind>=minW&&(!maxW||h.wind<=maxW)&&(!allowedDirs||allowedDirs.includes(h.dir)))
+          hits.push({di,hour:h.hour,wind:h.wind,dir:h.dir});
+      });
+    });
+    if(hits.length){
+      const f=hits[0];
+      const dl=f.di===0?'TODAY':f.di===1?'TOMORROW':dayName(weekData[f.di].date,f.di);
+      lines.push(`🎯 <strong>${all[watchLoc]?.name||watchLoc}</strong> — ${cvtWind(minW)}–${maxW?cvtWind(maxW):'∞'} ${unitLabel(windUnit)} · ${dl} ${String(f.hour).padStart(2,'0')}:00 · ${cvtWind(f.wind)} ${unitLabel(windUnit)} ${f.dir} · ${hits.length} windows`);
+    }
+  });
+  if(lines.length){ae.style.display='block';ae.innerHTML=lines.join('<br>');}
+  else ae.style.display='none';
+}
+
+// ── Register everything on window so cross-block calls work ──
+window.handleCheckIn = handleCheckIn;
+window.handleRateConditions = handleRateConditions;
+window.handleShare = handleShare;
+window.openAddAlertPanel = openAddAlertPanel;
+window.closeAddAlertPanel = closeAddAlertPanel;
+window.saveCurrentAlert = saveCurrentAlert;
+window._editAlert = _editAlert;
+window._deleteAlert = _deleteAlert;
+window._toggleAlertEnabled = _toggleAlertEnabled;
+window._toggleAlertDir = _toggleAlertDir;
+window._toggleAlertDay = _toggleAlertDay;
+window._renderSavedAlertsList = renderSavedAlertsList;
+window._checkWindAlerts = _checkWindAlerts;
+
+// Render alerts list when settings opens
+const _origOpenSettings = window.openSettings;
+window.openSettings = function() {
+  if(_origOpenSettings) _origOpenSettings();
+  setTimeout(updatePushBtn, 100);
+  setTimeout(renderSavedAlertsList, 200);
+};
+</script>
+</body>
+</html>
