@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- WingCast v34 - built 2026-04-27 -->
 <title>WingCast — Wingfoil Forecast</title>
 
 <!-- PWA Meta Tags -->
@@ -4299,13 +4303,7 @@ async function subscribePush() {
     if (btn) { btn.textContent = '✓ ENABLED'; btn.style.background = 'rgba(0,229,160,0.25)'; btn.disabled = false; }
     if (statusText) statusText.textContent = '✓ Push notifications active on this device.';
 
-    // Send test notification after 2 seconds
-    setTimeout(() => {
-      new Notification('WingCast 🏄', {
-        body: 'Wind alerts are now active! You\'ll be notified when conditions hit your target.',
-        icon: '/icons/icon-192x192.png',
-      });
-    }, 2000);
+    // Test notification removed to prevent duplicates
 
   } catch(e) {
     console.error('[WingCast] Push subscription failed:', e);
@@ -4361,12 +4359,6 @@ function updatePushBtn() {
 }
 
 // Call updatePushBtn when settings opens
-const _origOpenSettings = window.openSettings;
-window.openSettings = function() {
-  if (_origOpenSettings) _origOpenSettings();
-  setTimeout(updatePushBtn, 100);
-};
-
 // Init Firebase silently on load (needed for background messages)
 window.addEventListener('load', () => {
   initFirebase();
@@ -5473,28 +5465,35 @@ function renderSavedAlertsList() {
   const el = document.getElementById('savedAlertsList'); if (!el) return;
   const alerts = getAlerts(); const all = getAllLocations();
   if (!alerts.length) {
-    el.innerHTML = '<div style="font-family:var(--font-condensed,sans-serif);font-size:12px;color:var(--text-muted);text-align:center;padding:8px 0;">No alerts yet — tap + ADD ALERT</div>'; return;
+    el.innerHTML = '<div style="color:#7ab3d4;text-align:center;padding:8px;">No alerts yet &mdash; tap + ADD ALERT</div>'; return;
   }
   el.innerHTML = alerts.map((a, i) => {
     const locName = all[a.location]?.name || a.location || 'Unknown';
     const minW = a.minWind ? ktsToDisplay(a.minWind) : '?';
-    const maxW = a.maxWind ? ktsToDisplay(a.maxWind) : '∞';
-    const dirs = (a.dirs||[]).slice(0,5).join(' ') + ((a.dirs||[]).length>5?'…':'');
+    const maxW = a.maxWind ? ktsToDisplay(a.maxWind) : '\u221e';
+    const dirs = (a.dirs||[]).slice(0,5).join(' ') + ((a.dirs||[]).length>5?'\u2026':'');
     const enabled = a.enabled !== false;
-    return `<div style="background:${enabled?'rgba(0,229,160,0.06)':'rgba(91,196,245,0.04)'};border:1px solid ${enabled?'rgba(0,229,160,0.25)':'rgba(91,196,245,0.15)'};border-radius:10px;padding:10px 12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${enabled?'var(--wind-green)':'var(--text-dim)'};">${locName}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);">${minW}–${maxW} ${unitLabel(windUnit)} · ${dirs||'all dirs'}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);">${a.timeFrom||'07:00'}–${a.timeTo||'21:00'}</div>
-        </div>
-        <div style="display:flex;gap:5px;flex-shrink:0;">
-          <button onclick="window._toggleAlertEnabled(${i})" style="padding:3px 8px;border-radius:5px;background:${enabled?'rgba(0,229,160,0.15)':'rgba(255,59,92,0.1)'};border:1px solid ${enabled?'rgba(0,229,160,0.4)':'rgba(255,59,92,0.3)'};color:${enabled?'var(--wind-green)':'var(--wind-red)'};font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">${enabled?'ON':'OFF'}</button>
-          <button onclick="window._editAlert(${i})" style="padding:3px 8px;border-radius:5px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.25);color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">EDIT</button>
-          <button onclick="window._deleteAlert(${i})" style="padding:3px 7px;border-radius:5px;background:rgba(255,59,92,0.08);border:1px solid rgba(255,59,92,0.2);color:var(--wind-red);font-size:13px;cursor:pointer;">✕</button>
-        </div>
-      </div>
-    </div>`;
+    const bg = enabled ? 'rgba(0,229,160,0.06)' : 'rgba(91,196,245,0.04)';
+    const border = enabled ? 'rgba(0,229,160,0.25)' : 'rgba(91,196,245,0.15)';
+    const nameCol = enabled ? 'var(--wind-green)' : 'var(--text-dim)';
+    const btnBg = enabled ? 'rgba(0,229,160,0.15)' : 'rgba(255,59,92,0.1)';
+    const btnBorder = enabled ? 'rgba(0,229,160,0.4)' : 'rgba(255,59,92,0.3)';
+    const btnCol = enabled ? 'var(--wind-green)' : 'var(--wind-red)';
+    const btnLabel = enabled ? 'ON' : 'OFF';
+    return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:10px;padding:10px 12px;margin-bottom:6px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:14px;font-weight:700;color:' + nameCol + ';">' + locName + '</div>' +
+          '<div style="font-size:11px;color:var(--text-dim);">' + minW + '\u2013' + maxW + ' ' + unitLabel(windUnit) + ' \u00b7 ' + (dirs||'all dirs') + '</div>' +
+          '<div style="font-size:11px;color:var(--text-muted);">' + (a.timeFrom||'07:00') + '\u2013' + (a.timeTo||'21:00') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:5px;flex-shrink:0;">' +
+          '<button onclick="window._toggleAlertEnabled(' + i + ')" style="padding:3px 8px;border-radius:5px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';color:' + btnCol + ';font-size:11px;font-weight:700;cursor:pointer;">' + btnLabel + '</button>' +
+          '<button onclick="window._editAlert(' + i + ')" style="padding:3px 8px;border-radius:5px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.25);color:var(--sky);font-size:11px;font-weight:700;cursor:pointer;">EDIT</button>' +
+          '<button onclick="window._deleteAlert(' + i + ')" style="padding:3px 7px;border-radius:5px;background:rgba(255,59,92,0.08);border:1px solid rgba(255,59,92,0.2);color:var(--wind-red);font-size:13px;cursor:pointer;">\u2715</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
@@ -5642,12 +5641,18 @@ window._renderSavedAlertsList = renderSavedAlertsList;
 window._checkWindAlerts = _checkWindAlerts;
 
 // Render alerts list when settings opens
-const _origOpenSettings = window.openSettings;
-window.openSettings = function() {
-  if(_origOpenSettings) _origOpenSettings();
-  setTimeout(updatePushBtn, 100);
-  setTimeout(renderSavedAlertsList, 200);
-};
+// Safe settings wrapper - Copilot pattern
+if (!window._settingsWrapped) {
+  const _origOpenSettings = window.openSettings;
+  window.openSettings = function() {
+    if (typeof _origOpenSettings === 'function') _origOpenSettings();
+    setTimeout(() => {
+      if (typeof updatePushBtn === 'function') updatePushBtn();
+      if (typeof renderSavedAlertsList === 'function') renderSavedAlertsList();
+    }, 150);
+  };
+  window._settingsWrapped = true;
+}
 </script>
 </body>
 </html>
