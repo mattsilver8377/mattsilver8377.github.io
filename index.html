@@ -4578,13 +4578,54 @@ function initFirebaseAuth() {
     _fbAuth.onAuthStateChanged(async user => {
       wcUser = user;
       if (user) {
+        // Load local profile first (fast)
+        const key = 'wc_profile_' + user.uid;
+        try { profile = JSON.parse(_store.get(key) || _store.get('wc_profile') || '{}'); } catch(e) { profile = {}; }
+        if (!profile.weight)   profile.weight   = 95;
+        if (!profile.level)    profile.level    = 'advanced';
+        if (!profile.quiver)   profile.quiver   = [{size:6.0,name:'6m Wing'},{size:5.5,name:'5.5m Wing'},{size:4.0,name:'4m Wing'}];
+        if (!profile.boards)   profile.boards   = [];
+        if (!profile.wetsuits) profile.wetsuits = [];
         try {
           const doc = await _fbDb.collection('users').doc(user.uid).get();
-          if (doc.exists) { wcUserPro = doc.data().isPro === true; }
-          else { await _fbDb.collection('users').doc(user.uid).set({ email: user.email, isPro: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); wcUserPro = false; }
-        } catch(e) { wcUserPro = false; }
-      } else { wcUserPro = false; }
+          if (doc.exists) {
+            const data = doc.data();
+            wcUserPro = data.isPro === true;
+            wcUserData = data;
+            // ── CROSS-DEVICE SYNC: merge Firestore profile ──
+            if (data.profile) {
+              const fp = data.profile;
+              if (fp.name)    profile.name    = fp.name;
+              if (fp.weight)  profile.weight  = fp.weight;
+              if (fp.level)   profile.level   = fp.level;
+              if (fp.homeSpot) profile.homeSpot = fp.homeSpot;
+              if (fp.avatar)  profile.avatar  = fp.avatar;
+              if (fp.quiver?.length)  profile.quiver  = fp.quiver;
+              if (fp.boards?.length)  profile.boards  = fp.boards;
+              if (fp.wetsuits?.length) profile.wetsuits = fp.wetsuits;
+              if (fp.alerts?.length)  profile.alerts  = fp.alerts;
+              if (fp.customLocations?.length) {
+                profile.customLocations = fp.customLocations;
+                fp.customLocations.forEach(c => { if(c.key) LOCATIONS[c.key] = c; });
+                syncSpotCoords();
+                renderLocationSelect();
+              }
+              _store.set(key, JSON.stringify(profile));
+            }
+            // ── SYNC SESSIONS from Firestore ──
+            _syncSessionsFromFirestore(user.uid);
+          } else {
+            await _fbDb.collection('users').doc(user.uid).set({
+              email: user.email, isPro: false,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            wcUserPro = false; wcUserData = {};
+          }
+        } catch(e) { wcUserPro = false; wcUserData = {}; console.warn('[WingCast] Auth sync:', e.message); }
+      } else { wcUserPro = false; wcUserData = {}; }
       updateAuthUI(); applyProGating();
+      if (typeof renderDayTabs === 'function') renderDayTabs();
+      if (currentLocation && typeof loadSpotSocial === 'function') setTimeout(() => loadSpotSocial(currentLocation), 300);
     });
   } catch(e) { console.warn('[WingCast] Auth init:', e.message); }
 }
@@ -5511,6 +5552,7 @@ function _populateAlertForm(a) {
 }
 
 function openAddAlertPanel() {
+  profile._editNotif = {dirs:['SW','SSW','SE','ESE','S'],days:[0,1,2,3,4,5,6]};
   const p=document.getElementById('addAlertPanel'); if(p) p.style.display='block';
   const t=document.getElementById('addAlertPanelTitle'); if(t) t.textContent='NEW ALERT';
   const e=document.getElementById('editingAlertId'); if(e) e.value='';
@@ -5563,7 +5605,7 @@ function saveCurrentAlert() {
   const minWKts=minRaw?displayToKts(parseFloat(minRaw)):null;
   const maxWKts=maxRaw?displayToKts(parseFloat(maxRaw)):null;
   if(!loc){showToast('⚠ Please select a spot');return;}
-  if(!minWKts){showToast('⚠ Please set a minimum wind speed');return;}
+  if(minWKts===null||minWKts===undefined||isNaN(minWKts)){showToast('⚠ Please set a minimum wind speed');return;}
   const alertObj={id:Date.now(),location:loc,minWind:minWKts,maxWind:maxWKts,
     dirs:profile._editNotif?.dirs||[],days:profile._editNotif?.days||[0,1,2,3,4,5,6],
     lookahead:parseInt(document.getElementById('alertLookahead')?.value)||1,
@@ -5578,6 +5620,8 @@ function saveCurrentAlert() {
   saveAlerts(alerts); closeAddAlertPanel(); renderSavedAlertsList(); showToast('✓ Alert saved!');
   const first=alerts.find(a=>a.enabled!==false);
   if(first){profile.notif={...first};_store.set('wc_profile',JSON.stringify(profile));}
+  // Sync to Firestore so alerts work across devices
+  if(typeof _syncProfileToFirestore==='function') setTimeout(_syncProfileToFirestore, 300);
 }
 
 function _deleteAlert(idx) {
@@ -5653,6 +5697,87 @@ if (!window._settingsWrapped) {
   };
   window._settingsWrapped = true;
 }
+
+// ==================== CROSS-DEVICE SYNC ====================
+
+async function _syncSessionsFromFirestore(uid) {
+  if (!_fbDb || !uid) return;
+  try {
+    const snap = await _fbDb.collection('users').doc(uid).collection('sessions').orderBy('date','desc').limit(100).get();
+    if (snap.empty) {
+      // No Firestore sessions — push local ones up
+      const local = getSessions();
+      if (local.length) await _pushSessionsToFirestore(uid, local);
+      return;
+    }
+    const fsSessions = snap.docs.map(d => ({...d.data(), _fsId: d.id}));
+    const local = getSessions();
+    // Merge: combine by id, Firestore wins for conflicts
+    const merged = [...fsSessions];
+    local.forEach(ls => {
+      if (!merged.find(fs => fs.id === ls.id)) merged.push(ls);
+    });
+    merged.sort((a,b) => new Date(b.date) - new Date(a.date));
+    saveSessions(merged);
+    if (typeof renderSessions === 'function') renderSessions();
+    console.log('[WingCast] Sessions synced from Firestore:', merged.length);
+  } catch(e) { console.warn('[WingCast] Session sync error:', e.message); }
+}
+
+async function _pushSessionsToFirestore(uid, sessions) {
+  if (!_fbDb || !uid || !sessions.length) return;
+  try {
+    const batch = _fbDb.batch();
+    sessions.slice(0,50).forEach(s => {
+      const ref = _fbDb.collection('users').doc(uid).collection('sessions').doc(String(s.id));
+      batch.set(ref, s);
+    });
+    await batch.commit();
+    console.log('[WingCast] Sessions pushed to Firestore');
+  } catch(e) { console.warn('[WingCast] Session push error:', e.message); }
+}
+
+async function _syncProfileToFirestore() {
+  if (!_fbDb || !wcUser) return;
+  try {
+    const profileToSync = {
+      name: profile.name || '',
+      weight: profile.weight || 95,
+      level: profile.level || 'advanced',
+      homeSpot: profile.homeSpot || '',
+      avatar: profile.avatar || '🤙',
+      quiver: profile.quiver || [],
+      boards: profile.boards || [],
+      wetsuits: profile.wetsuits || [],
+      alerts: profile.alerts || [],
+      customLocations: profile.customLocations || [],
+    };
+    await _fbDb.collection('users').doc(wcUser.uid).update({ profile: profileToSync });
+    console.log('[WingCast] Profile synced to Firestore');
+  } catch(e) { console.warn('[WingCast] Profile sync error:', e.message); }
+}
+
+// Override saveSession to also push to Firestore
+const _origSaveSession = window.saveSession;
+window.saveSession = async function() {
+  if (typeof _origSaveSession === 'function') _origSaveSession();
+  // Push the new session to Firestore
+  if (wcUser && _fbDb) {
+    const sessions = getSessions();
+    if (sessions.length) await _pushSessionsToFirestore(wcUser.uid, [sessions[0]]);
+  }
+};
+
+// Override saveProfile to also sync to Firestore  
+const _origSaveProfile = window.saveProfile;
+window.saveProfile = function() {
+  if (typeof _origSaveProfile === 'function') _origSaveProfile();
+  setTimeout(_syncProfileToFirestore, 500);
+};
+
+// Register sync functions
+window._syncSessionsFromFirestore = _syncSessionsFromFirestore;
+window._syncProfileToFirestore = _syncProfileToFirestore;
 </script>
 </body>
 </html>
