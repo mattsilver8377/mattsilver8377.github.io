@@ -2132,6 +2132,29 @@ function cvtWind(kts) {
   }
 }
 
+// Convert from display unit back to KTS for storage
+function displayToKts(val) {
+  if (!val && val !== 0) return null;
+  switch (windUnit) {
+    case 'ms':  return Math.round(val / 0.514444);
+    case 'mph': return Math.round(val / 1.15078);
+    case 'bft': return bftToKts(val);
+    default:    return Math.round(val); // kts
+  }
+}
+
+// Convert KTS to display unit for showing in inputs
+function ktsToDisplay(kts) {
+  if (!kts && kts !== 0) return '';
+  return cvtWind(kts);
+}
+
+function bftToKts(bft) {
+  const table = [0, 1, 4, 7, 11, 17, 22, 28, 34, 41, 48, 56, 64];
+  return table[Math.min(Math.round(bft), 12)] || 0;
+}
+
+
 function ktsToBft(kts) {
   if (kts < 1)   return 0;
   if (kts < 4)   return 1;
