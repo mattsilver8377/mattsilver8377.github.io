@@ -2116,6 +2116,11 @@ function nextUnit() {
   updateMapLegend();
   profile.unit = windUnit;
   _store.set('wc_profile', JSON.stringify(profile));
+  // Update alert unit label + inputs, sessions wind alert banner
+  const lbl=document.getElementById('alertWindUnitLabel'); if(lbl) lbl.textContent=unitLabel(windUnit);
+  if(typeof renderSavedAlertsList==='function') renderSavedAlertsList();
+  if(typeof _renderAlertPickers==='function') _renderAlertPickers();
+  if(typeof checkWindAlertAdvanced==='function') checkWindAlertAdvanced();
 }
 
 function unitLabel(u) {
@@ -3751,6 +3756,16 @@ function setUnitPref(u) {
   updateUnitPrefBtns(); renderBanner(); renderStats(); renderForecastTable();
   updateMapLegend();
   profile.unit=u; _store.set('wc_profile', JSON.stringify(profile));
+  // Update alert unit label + inputs, sessions wind alert banner
+  const lbl=document.getElementById('alertWindUnitLabel'); if(lbl) lbl.textContent=unitLabel(u);
+  if(typeof renderSavedAlertsList==='function') renderSavedAlertsList();
+  if(typeof _renderAlertPickers==='function') _renderAlertPickers();
+  if(typeof checkWindAlertAdvanced==='function') checkWindAlertAdvanced();
+  // Re-render alert form inputs if open
+  const mn=document.getElementById('alertMinWind');
+  const mx=document.getElementById('alertMaxWind');
+  if(mn&&mn.value) mn.value=ktsToDisplay(displayToKts(parseFloat(mn.value)));
+  if(mx&&mx.value) mx.value=ktsToDisplay(displayToKts(parseFloat(mx.value)));
 }
 
 function updateUnitPrefBtns() {
