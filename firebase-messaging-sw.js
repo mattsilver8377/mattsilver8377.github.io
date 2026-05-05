@@ -1,8 +1,8 @@
-// WingCast Service Worker v33 - Firebase Push Notifications
+// WingCast Service Worker v37 - Firebase Push Notifications
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-const CACHE_NAME = 'wingcast-v33';
+const CACHE_NAME = 'wingcast-v37';
 
 firebase.initializeApp({
   apiKey: "AIzaSyBywWIHDEloGao0lHnAISsYHvJqATzU0Q8",
@@ -19,11 +19,12 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage(async payload => {
   console.log('[SW] Background push received:', payload);
 
-  // If app is open in foreground, don't show a second notification
+  // If app is open in ANY tab (visible or backgrounded), skip OS notification.
+  // The app's onMessage() handler shows the in-app banner instead.
   const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
-  const appOpen = clientList.some(c => c.url.includes('wingcast.co.uk') && c.visibilityState === 'visible');
+  const appOpen = clientList.some(c => c.url.includes('wingcast.co.uk'));
   if (appOpen) {
-    console.log('[SW] App is open — skipping background notification to avoid duplicate');
+    console.log('[SW] App is open — skipping OS notification, app onMessage handles it');
     return;
   }
 
