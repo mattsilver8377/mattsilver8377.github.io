@@ -3017,10 +3017,14 @@ function setupMapMoveListener() {
 
 
 // Register service worker
+let _swRegistration = null;
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('firebase-messaging-sw.js')
-      .then(reg => console.log('[WingCast] SW registered:', reg.scope))
+      .then(reg => {
+        _swRegistration = reg;
+        console.log('[WingCast] SW registered:', reg.scope);
+      })
       .catch(err => console.warn('[WingCast] SW failed:', err));
   });
 }
@@ -4259,6 +4263,10 @@ function initFirebase() {
     if (typeof firebase === 'undefined') return null;
     _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
     _fbMessaging = firebase.messaging(_fbApp);
+    // Use our SW so Firebase doesn't register a second one
+    if (_swRegistration) {
+      _fbMessaging.useServiceWorker(_swRegistration);
+    }
     // Handle foreground messages — deduplicate
     let _lastPushTs = 0;
     _fbMessaging.onMessage(payload => {
@@ -4324,7 +4332,10 @@ async function subscribePush() {
     initFirebase();
     if (!_fbMessaging) throw new Error('Firebase messaging unavailable');
 
-    const token = await _fbMessaging.getToken({ vapidKey: VAPID_KEY });
+    // Pass our SW registration so Firebase doesn't create a second SW
+    const tokenOptions = { vapidKey: VAPID_KEY };
+    if (_swRegistration) tokenOptions.serviceWorkerRegistration = _swRegistration;
+    const token = await _fbMessaging.getToken(tokenOptions);
     if (!token) throw new Error('No token returned');
 
     // Save token to profile locally
