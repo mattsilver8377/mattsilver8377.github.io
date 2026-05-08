@@ -4243,6 +4243,21 @@ init().then(() => setTimeout(checkFirstRun, 800)).catch(() => setTimeout(checkFi
 // Auto-refresh every 15 minutes
 setInterval(() => { init(); }, 15 * 60 * 1000);
 
+// After auth resolves, refresh FCM token in Firestore so Cloud Function has latest prefs
+setTimeout(async () => {
+  if (profile.pushEnabled && profile.fcmToken) {
+    // Wait for auth then push prefs
+    const wait = () => new Promise(r => setTimeout(r, 500));
+    for (let i = 0; i < 10; i++) {
+      if (wcUser && _fbDb) {
+        try { await savePushPrefsToFirestore(profile.fcmToken); } catch(e) {}
+        break;
+      }
+      await wait();
+    }
+  }
+}, 3000);
+
 // ==================== FIREBASE PUSH NOTIFICATIONS ====================
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBywWIHDEloGao0lHnAISsYHvJqATzU0Q8",
@@ -4365,11 +4380,17 @@ async function subscribePush() {
 async function savePushPrefsToFirestore(token) {
   if (!_fbDb || !wcUser) return;
   try {
+    // Build alertPrefs from multi-alert system (profile.alerts)
+    // Cloud Function reads alertPrefs array to know what to check
+    const alerts = (profile.alerts || []).filter(a => a.enabled !== false);
+    // Also support legacy single notif for backwards compat
     const n = profile.notif || {};
-    await _fbDb.collection('users').doc(wcUser.uid).update({
+    const firstAlert = alerts[0] || n;
+    await _fbDb.collection('users').doc(wcUser.uid).set({
       fcmToken: token || profile.fcmToken || null,
       pushEnabled: true,
-      alertPrefs: {
+      // Array of all active alerts for Cloud Function
+      alertPrefs: alerts.length ? alerts : [{
         location: n.location || profile.homeSpot || '',
         minWind:  n.minWind  || 12,
         maxWind:  n.maxWind  || 35,
@@ -4378,11 +4399,12 @@ async function savePushPrefsToFirestore(token) {
         timeFrom: n.timeFrom || '07:00',
         timeTo:   n.timeTo   || '21:00',
         lookahead: n.lookahead != null ? n.lookahead : 1,
-      }
-    });
-    console.log('[WingCast] Alert prefs saved to Firestore');
+        cooldownHours: n.cooldownHours || 6,
+      }],
+    }, { merge: true });  // merge:true so isPro etc not overwritten
+    console.log('[WingCast] Push prefs saved to Firestore:', alerts.length, 'alert(s)');
   } catch(e) {
-    console.warn('[WingCast] Could not save alert prefs:', e.message);
+    console.warn('[WingCast] Could not save push prefs:', e.message);
   }
 }
 
@@ -4399,11 +4421,23 @@ function updatePushBtn() {
   if (Notification.permission === 'granted' && profile.pushEnabled) {
     btn.textContent = '✓ ENABLED';
     btn.style.background = 'rgba(0,229,160,0.25)';
-    if (statusText) statusText.textContent = '✓ Push notifications active on this device.';
+    btn.style.borderColor = 'rgba(0,229,160,0.4)';
+    btn.style.color = 'var(--wind-green)';
+    btn.disabled = false;
+    btn.onclick = disablePush;
+    if (statusText) statusText.textContent = '✓ Push notifications active — tap to disable.';
   } else if (Notification.permission === 'denied') {
     btn.textContent = 'BLOCKED';
     btn.disabled = true;
     if (statusText) statusText.textContent = '⚠ Blocked — enable in browser/phone settings.';
+  } else {
+    btn.textContent = 'ENABLE';
+    btn.style.background = 'rgba(0,229,160,0.15)';
+    btn.style.borderColor = 'rgba(0,229,160,0.4)';
+    btn.style.color = 'var(--wind-green)';
+    btn.disabled = false;
+    btn.onclick = requestPushPermission;
+    if (statusText) statusText.textContent = 'Get notified when wind hits your target — even when the app is closed.';
   }
 }
 
@@ -5669,8 +5703,12 @@ function saveCurrentAlert() {
   saveAlerts(alerts); closeAddAlertPanel(); renderSavedAlertsList(); showToast('✓ Alert saved!');
   const first=alerts.find(a=>a.enabled!==false);
   if(first){profile.notif={...first};_store.set('wc_profile',JSON.stringify(profile));}
-  // Sync to Firestore so alerts work across devices
+  // Sync profile to Firestore for cross-device
   if(typeof _syncProfileToFirestore==='function') setTimeout(_syncProfileToFirestore, 300);
+  // Also update FCM prefs so Cloud Function gets new alert immediately
+  if(profile.pushEnabled && profile.fcmToken) {
+    setTimeout(() => savePushPrefsToFirestore(profile.fcmToken), 600);
+  }
 }
 
 function _deleteAlert(idx) {
