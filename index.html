@@ -4321,6 +4321,20 @@ async function requestPushPermission() {
     return;
   }
 
+  // Ensure Firebase is initialised before proceeding
+  if (!_fbApp) initFirebase();
+  if (!_fbMessaging) {
+    // Wait up to 3 seconds for Firebase to init
+    for (let i = 0; i < 6; i++) {
+      await new Promise(r => setTimeout(r, 500));
+      if (_fbMessaging) break;
+    }
+  }
+  if (!_fbMessaging) {
+    if (statusText) statusText.textContent = '⚠ Firebase not ready — please try again.';
+    return;
+  }
+
   // Already granted
   if (Notification.permission === 'granted') {
     await subscribePush();
@@ -4344,8 +4358,12 @@ async function subscribePush() {
   const statusText = document.getElementById('pushStatusText');
   try {
     if (btn) { btn.textContent = 'SUBSCRIBING...'; btn.disabled = true; }
-    initFirebase();
-    if (!_fbMessaging) throw new Error('Firebase messaging unavailable');
+    // Reinitialise Firebase if needed (e.g. after disable cleared state)
+    if (!_fbApp) initFirebase();
+    if (!_fbMessaging) initFirebase();
+    // Wait briefly for Firebase to be ready
+    if (!_fbMessaging) await new Promise(r => setTimeout(r, 1000));
+    if (!_fbMessaging) throw new Error('Firebase messaging unavailable — please reload and try again');
 
     // Pass our SW registration so Firebase doesn't create a second SW
     const tokenOptions = { vapidKey: VAPID_KEY };
