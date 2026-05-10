@@ -4422,6 +4422,40 @@ async function savePushPrefsToFirestore(token) {
   }
 }
 
+// Disable push notifications
+async function disablePush() {
+  const btn = document.getElementById('pushEnableBtn');
+  const statusText = document.getElementById('pushStatusText');
+  profile.pushEnabled = false;
+  profile.fcmToken = null;
+  _store.set('wc_profile', JSON.stringify(profile));
+  // Update Firestore
+  if (_fbDb && wcUser) {
+    try {
+      await _fbDb.collection('users').doc(wcUser.uid).set({
+        pushEnabled: false,
+        fcmToken: null
+      }, { merge: true });
+    } catch(e) { console.warn('[WingCast] Could not update push status:', e.message); }
+  }
+  // Revoke FCM token so no more messages sent to this device
+  if (_fbMessaging) {
+    try {
+      const token = await _fbMessaging.getToken({ vapidKey: VAPID_KEY });
+      if (token) await _fbMessaging.deleteToken(token);
+    } catch(e) {}
+  }
+  if (btn) {
+    btn.textContent = 'ENABLE';
+    btn.style.background = 'rgba(0,229,160,0.15)';
+    btn.style.borderColor = 'rgba(0,229,160,0.4)';
+    btn.style.color = 'var(--wind-green)';
+    btn.disabled = false;
+  }
+  if (statusText) statusText.textContent = 'Push notifications disabled.';
+  showToast('🔕 Push notifications disabled');
+}
+
 // Update push button state on settings open
 function updatePushBtn() {
   const btn = document.getElementById('pushEnableBtn');
