@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<!-- WingCast v34 - built 2026-04-27 -->
+<!-- WingCast v35 - built 2026-04-27 -->
 <title>WingCast — Wingfoil Forecast</title>
 
 <!-- PWA Meta Tags -->
@@ -22,9 +22,9 @@
 <!-- Open Graph for WhatsApp/social sharing -->
 <meta property="og:title" content="WingCast — Wingfoil Forecast">
 <meta property="og:description" content="Live wind, tides & wingfoil conditions for 74 UK spots. Free forecast app.">
-<meta property="og:url" content="https://mattsilver8377.github.io/">
+<meta property="og:url" content="https://wingcast.co.uk/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://mattsilver8377.github.io/icons/icon-512x512.png">
+<meta property="og:image" content="https://wingcast.co.uk/icons/icon-512x512.png">
 
 <!-- PWA Manifest -->
 <link rel="manifest" href="/manifest.json">
@@ -577,7 +577,9 @@
   }
 
   /* ====== BOTTOM NAV ====== */
-  #bottomNav { position:fixed;bottom:0;left:0;right:0;height:62px;background:rgba(4,13,26,0.97);border-top:1px solid var(--glass-border);display:flex;z-index:300;backdrop-filter:blur(16px); }
+  #bottomNav { position:fixed;bottom:0;left:0;right:0;height:62px;background:rgba(4,13,26,0.97);border-top:1px solid var(--glass-border);display:flex;z-index:2000;backdrop-filter:blur(16px); }
+  .leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: 400 !important; }
+  .leaflet-control { z-index: 400 !important; }
   .nav-btn { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--text-muted);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;cursor:pointer;transition:color 0.2s;padding:0; }
   .nav-btn.active { color:var(--wind-green); }
   .nav-btn.active svg { filter:drop-shadow(0 0 4px var(--wind-green)); }
@@ -5616,11 +5618,11 @@ function shareToWhatsApp() {
   if (!weekData.length || !weekData[0].hours) return;
   const now = weekData[0].hours[3];
   const cond = getWingCondition(now.wind, now.gust, now.swell, now.dir, currentLocation);
-  const text = `🏄 ${loc?.name||currentLocation} — ${cond.label} today!\n💨 ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir} (gusts ${cvtWind(now.gust)})\n🌊 Swell: ${now.swell}m\n📱 WingCast: https://mattsilver8377.github.io/`;
+  const text = `🏄 ${loc?.name||currentLocation} — ${cond.label} today!\n💨 ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir} (gusts ${cvtWind(now.gust)})\n🌊 Swell: ${now.swell}m\n📱 WingCast: https://wingcast.co.uk/`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 function copyShareLink() {
-  navigator.clipboard.writeText('https://mattsilver8377.github.io/').then(() => showToast('✓ Link copied!'));
+  navigator.clipboard.writeText('https://wingcast.co.uk/').then(() => showToast('✓ Link copied!'));
 }
 async function shareNative() {
   const loc = getAllLocations()[currentLocation];
@@ -5628,7 +5630,7 @@ async function shareNative() {
   const now = weekData[0].hours[3];
   const cond = getWingCondition(now.wind, now.gust, now.swell, now.dir, currentLocation);
   if (navigator.share) {
-    await navigator.share({ title:`${loc?.name||currentLocation} — ${cond.label} | WingCast`, text:`${cond.label} at ${loc?.name||currentLocation}! ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir}`, url:'https://mattsilver8377.github.io/' });
+    await navigator.share({ title:`${loc?.name||currentLocation} — ${cond.label} | WingCast`, text:`${cond.label} at ${loc?.name||currentLocation}! ${cvtWind(now.wind)}${unitLabel(windUnit)} ${now.dir}`, url:'https://wingcast.co.uk/' });
   } else { copyShareLink(); }
 }
 
