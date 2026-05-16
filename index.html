@@ -1114,7 +1114,7 @@
       </div>
     </div>
     <!-- Pro upgrade banner -->
-    <div id="proUpgradeBanner" style="display:none;margin-bottom:14px;padding:16px 18px;background:linear-gradient(135deg,rgba(247,201,72,0.12),rgba(255,140,66,0.06));border:1px solid rgba(247,201,72,0.35);border-radius:14px;cursor:pointer;" onclick="openProModal()">
+    <div id="proUpgradeBanner" style="display:none;margin-bottom:14px;padding:16px 18px;background:linear-gradient(135deg,rgba(247,201,72,0.12),rgba(255,140,66,0.06));border:1px solid rgba(247,201,72,0.35);border-radius:14px;cursor:pointer;" onclick="openProModal()" data-auth-gated="true">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--wind-yellow);letter-spacing:2px;">🚀 UPGRADE TO PRO</div>
@@ -4827,6 +4827,26 @@ function updateAuthUI() {
   }
   if (badge) badge.style.display = wcUserPro ? 'block' : 'none';
   if (banner) banner.style.display = (wcUser && !wcUserPro) ? 'flex' : 'none';
+  // Retry once after 2s in case Firestore was slow to respond
+  if (wcUser && !wcUserPro) {
+    setTimeout(async () => {
+      if (!_fbDb || !wcUser) return;
+      try {
+        const doc = await _fbDb.collection('users').doc(wcUser.uid).get();
+        if (doc.exists && doc.data().isPro === true) {
+          wcUserPro = true;
+          wcUserData = doc.data();
+          if (badge) badge.style.display = 'block';
+          if (banner) banner.style.display = 'none';
+          const proStatus = document.getElementById('accountProStatus');
+          const freeStatus = document.getElementById('accountFreeStatus');
+          if (proStatus) proStatus.style.display = 'block';
+          if (freeStatus) freeStatus.style.display = 'none';
+          if (typeof renderDayTabs === 'function') renderDayTabs();
+        }
+      } catch(e) {}
+    }, 2000);
+  }
   // Reload spot social now that auth state is known
   if (currentLocation && typeof loadSpotSocial === 'function') {
     setTimeout(() => loadSpotSocial(currentLocation), 300);
@@ -4936,7 +4956,7 @@ function startCheckout() {
   window.open(wcUser ? `${link}?prefilled_email=${encodeURIComponent(wcUser.email)}` : link, '_blank');
 }
 
-window.addEventListener('load', () => setTimeout(initFirebaseAuth, 600));
+window.addEventListener('load', () => initFirebaseAuth());
 
 // ==================== GPX TRACK SYSTEM ====================
 
@@ -5641,33 +5661,9 @@ function checkOnboardingComplete() {
 function openOnboardingModal() {
   const sel = document.getElementById('obHomeSpot');
   if (sel) {
-    // Group all built-in spots by region for easy browsing
-    const regions = {
-      'South East': ['eastbourne','pevensey','seaford','rye','cooden','greatstone','shoreham','lancing','eastwittering','bracklesham','whitstable','clacton'],
-      'South Coast': ['hayling','calshot','mudeford','poole','portland','weymouth'],
-      'South West': ['exmouth','bigbury','westwardho','saunton','watergate','hayle','marazion','rockcamel','praa','stithians'],
-      'Solent & IoW': ['ryde'],
-      'East Anglia': ['hunstanton','brancaster','wells','mersea','southend'],
-      'Inland Lakes': ['grafham','rutland','bewlwater','chewvalley','carsington','hollingworth','grimwith','ullswater','coniston','stithians','bala','lochken','lochmorlich'],
-      'Wales': ['rhosneigr','abersoch','hellsmouth','newgale','llangennith'],
-      'North West': ['westkirby','wallasey','ainsdale','morecambe'],
-      'Yorkshire & NE': ['hornsea','filey','scarborough','tynemouth','druridge'],
-      'Scotland East': ['longniddry','gullane','belhaven','westsands','largobay','aberdeen'],
-      'Scotland West': ['troon','barassie','machrihanish','tiree','nairn'],
-      'Northern Ireland': ['ballyholme','portstewart','strangford'],
-    };
-    let html = '<option value="">— I'll choose later —</option>';
-    for (const [region, keys] of Object.entries(regions)) {
-      const spots = keys.filter(k => BUILTIN_SPOTS[k]);
-      if (!spots.length) continue;
-      html += `<optgroup label="${region}">`;
-      html += spots.map(k => {
-        const s = BUILTIN_SPOTS[k];
-        return `<option value="${k}"${profile.homeSpot===k?' selected':''}>${s.name}</option>`;
-      }).join('');
-      html += '</optgroup>';
-    }
-    sel.innerHTML = html;
+    const all = getAllLocations();
+    sel.innerHTML = '<option value="">— select your home spot —</option>' +
+      Object.entries(all).map(([k,v])=>`<option value="${k}"${profile.homeSpot===k?' selected':''}>${v.name}</option>`).join('');
   }
   const n = document.getElementById('obName'), w = document.getElementById('obWeight');
   if (n && profile.name) n.value = profile.name;
@@ -5686,21 +5682,9 @@ function saveOnboarding() {
   const spot = document.getElementById('obHomeSpot').value;
   if (name) { profile.name = name; const p = document.getElementById('pName'); if(p) p.value = name; }
   if (weight) { profile.weight = weight; const p = document.getElementById('pWeight'); if(p) p.value = weight; }
-  if (spot && BUILTIN_SPOTS[spot]) {
-    // Add the chosen spot to their locations list automatically
-    profile.homeSpot = spot;
-    if (!LOCATIONS[spot]) {
-      const loc = { ...BUILTIN_SPOTS[spot], key: spot, isCustom: true, isBuiltin: false };
-      LOCATIONS[spot] = loc;
-      profile.customLocations = profile.customLocations || [];
-      if (!profile.customLocations.find(c => c.key === spot)) profile.customLocations.push(loc);
-    }
-    currentLocation = spot;
-    syncSpotCoords();
-  }
+  if (spot) { profile.homeSpot = spot; }
   _store.set('wc_profile', JSON.stringify(profile));
   closeOnboardingModal();
-  renderLocationSelect();
   showToast('✓ Profile saved — welcome to WingCast! 🤙');
 }
 
