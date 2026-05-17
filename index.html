@@ -1005,25 +1005,11 @@
     <div class="section-header">
       <span class="section-icon">💨</span>
       <span class="section-title">Hourly Wind & Weather</span>
+      <button onclick="openColumnEditor()" style="margin-left:auto;padding:4px 12px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.25);border-radius:5px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">⚙ COLUMNS</button>
     </div>
     <div class="hourly-table" style="overflow-x:auto;">
       <table id="forecastTable" style="min-width:600px;">
-        <thead>
-          <tr>
-            <th style="position:sticky;left:0;z-index:2;background:var(--ocean-mid);">TIME</th>
-            <th>CONDITION</th>
-            <th>WIND<br><span id="thWind">KTS</span></th>
-            <th>GUSTS<br><span id="thGust">KTS</span></th>
-            <th>WING</th>
-            <th>DIR</th>
-            <th>WEATHER</th>
-            <th>TEMP</th>
-            <th>TIDE<br>M</th>
-            <th>SWELL<br>M</th>
-            <th>PERIOD<br>S</th>
-            <th>CLOUD<br>%</th>
-          </tr>
-        </thead>
+        <thead id="forecastThead"><tr id="forecastHeaderRow"></tr></thead>
         <tbody id="forecastBody"></tbody>
       </table>
     </div>
@@ -2423,24 +2409,62 @@ function selectDay(i) {
   }
 }
 
+// ==================== COLUMN ORDER SYSTEM ====================
+const ALL_COLUMNS = [
+  { id:'condition', label:'CONDITION',  sub:'' },
+  { id:'wind',      label:'WIND',       sub:'KTS' },
+  { id:'gusts',     label:'GUSTS',      sub:'KTS' },
+  { id:'wing',      label:'WING',       sub:'' },
+  { id:'dir',       label:'DIR',        sub:'' },
+  { id:'weather',   label:'WEATHER',    sub:'' },
+  { id:'temp',      label:'TEMP',       sub:'' },
+  { id:'tide',      label:'TIDE',       sub:'M' },
+  { id:'swell',     label:'SWELL',      sub:'M' },
+  { id:'period',    label:'PERIOD',     sub:'S' },
+  { id:'cloud',     label:'CLOUD',      sub:'%' },
+];
+
+const DEFAULT_COL_ORDER = ALL_COLUMNS.map(c => c.id);
+
+function getColOrder() {
+  try {
+    const saved = JSON.parse(_store.get('wc_col_order') || 'null');
+    if (saved && Array.isArray(saved) && saved.length === ALL_COLUMNS.length) return saved;
+  } catch(e) {}
+  return [...DEFAULT_COL_ORDER];
+}
+
+function saveColOrder(order) {
+  _store.set('wc_col_order', JSON.stringify(order));
+}
+
 function renderForecastTable() {
   const u = unitLabel(windUnit);
-  const thW = document.getElementById('thWind'); if(thW) thW.textContent = u;
-  const thG = document.getElementById('thGust'); if(thG) thG.textContent = u;
+  const colOrder = getColOrder();
 
   const day = weekData[selectedDay];
   if (!day || !day.hours || !day.hours.length) return;
 
-  // Find best 3 hours to highlight
+  // Render dynamic header
+  const headerRow = document.getElementById('forecastHeaderRow');
+  if (headerRow) {
+    headerRow.innerHTML = '<th style="position:sticky;left:0;z-index:2;background:var(--ocean-mid);">TIME</th>' +
+      colOrder.map(id => {
+        const col = ALL_COLUMNS.find(c => c.id === id);
+        if (!col) return '';
+        const sub = (id === 'wind' || id === 'gusts') ? u : col.sub;
+        return `<th>${col.label}${sub ? `<br><span style="font-size:10px;opacity:0.7;">${sub}</span>` : ''}</th>`;
+      }).join('');
+  }
+
+  // Find best hours to highlight
   const scored = day.hours.map((h, i) => {
     const c = getWingCondition(h.wind, h.gust, h.swell, h.dir, currentLocation);
     const score = c.cls === 'epic' ? 4 : c.cls === 'good' ? 3 : c.cls === 'marginal' ? 1 : 0;
     return { i, score, h };
   });
   const bestScore = Math.max(...scored.map(s => s.score));
-  const bestHours = new Set(
-    bestScore >= 3 ? scored.filter(s => s.score === bestScore).map(s => s.i) : []
-  );
+  const bestHours = new Set(bestScore >= 3 ? scored.filter(s => s.score === bestScore).map(s => s.i) : []);
 
   const rows = day.hours.map((h, rowIdx) => {
     const cond = getWingCondition(h.wind, h.gust, h.swell, h.dir, currentLocation);
@@ -2448,72 +2472,174 @@ function renderForecastTable() {
     const wing = recommendWing(h.wind);
     const isBest = bestHours.has(rowIdx);
     const rowStyle = isBest ? 'background:rgba(0,229,160,0.06);' : '';
+    const bestStar = isBest ? '<span style="color:#f7c948;font-size:10px;margin-left:2px;">★</span>' : '';
 
-    // Tide height for this hour
+    // Pre-compute all possible cells
     const loc = LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation];
     const isInland = loc && loc.tideRange[0] === 0 && loc.tideRange[1] === 0;
-    let tideCell = '<td style="color:var(--text-muted);text-align:center;font-size:11px;">—</td>';
+    const windCol = wc.text === 'ws-perfect-text' ? '#00e5a0' : wc.text === 'ws-light-text' ? '#7ab3d4' : wc.text === 'ws-strong-text' ? '#f7c948' : wc.text === 'ws-gusty-text' ? '#ff8c42' : wc.text === 'ws-storm-text' ? '#ff3b5c' : 'var(--text-dim)';
+    const dirDeg = (DIR_DEG[h.dir] || 0) + 180;
+    const arrowColor = windColor(h.wind);
+    const dirArrow = `<svg width="20" height="20" viewBox="0 0 24 24" style="transform:rotate(${dirDeg}deg);display:inline-block;"><path d="M12 2 L16 10 L12 8 L8 10 Z" fill="${arrowColor}"/><line x1="12" y1="8" x2="12" y2="20" stroke="${arrowColor}" stroke-width="2" stroke-linecap="round"/></svg>`;
+    const dt = getDirType(h.dir, currentLocation);
+    const dirLabel = dt === 'offshore' ? `<div style="font-family:'Barlow Condensed';font-size:9px;color:var(--wind-red);letter-spacing:1px;">⚠OFF</div>` : dt === 'onshore' ? `<div style="font-family:'Barlow Condensed';font-size:9px;color:var(--wind-yellow);letter-spacing:1px;">ON</div>` : `<div style="font-family:'Barlow Condensed';font-size:9px;color:var(--wind-green);letter-spacing:1px;">✓X</div>`;
+    const swellCol = h.swell > 2.0 ? '#ff3b5c' : h.swell > 1.5 ? '#ff8c42' : h.swell > 0.8 ? '#f7c948' : 'var(--sky)';
+    const periodCol = h.wavePeriod >= 12 ? '#00e5a0' : h.wavePeriod >= 9 ? '#f7c948' : 'var(--text-dim)';
+    const cloudCol = h.cloud > 80 ? 'var(--text-dim)' : h.cloud > 50 ? '#7ab3d4' : '#f7c948';
+    const tempCol = h.temp >= 20 ? '#ff8c42' : h.temp >= 14 ? '#f7c948' : h.temp >= 10 ? '#5bc4f5' : '#7ab3d4';
+
+    let tideHTML = '<td style="color:var(--text-muted);text-align:center;font-size:11px;">—</td>';
     if (!isInland && day.tidePoints) {
       const tp = day.tidePoints.find(p => p.t === h.hour) || day.tidePoints.reduce((a,b) => Math.abs(b.t-h.hour)<Math.abs(a.t-h.hour)?b:a, day.tidePoints[0]);
       if (tp) {
-        // Determine rising or falling
         const tpNext = day.tidePoints.find(p => p.t === h.hour + 1);
         const trend = tpNext ? (tpNext.h > tp.h ? '↑' : '↓') : '';
         const tideCol = tp.h > (loc.tideRange[0] + loc.tideRange[1]) * 0.6 ? '#5bc4f5' : tp.h < (loc.tideRange[0] + loc.tideRange[1]) * 0.4 ? '#3a6a8a' : 'var(--text-dim)';
-        tideCell = `<td style="color:${tideCol};font-family:'Bebas Neue',sans-serif;font-size:16px;text-align:center;">${tp.h}<span style="font-size:11px;color:var(--text-muted);">${trend}</span></td>`;
+        tideHTML = `<td style="color:${tideCol};font-family:'Bebas Neue',sans-serif;font-size:16px;text-align:center;">${tp.h}<span style="font-size:11px;color:var(--text-muted);">${trend}</span></td>`;
       }
     }
 
-    // Wind speed colour cell
-    const windCol = wc.text === 'ws-perfect-text' ? '#00e5a0' : wc.text === 'ws-light-text' ? '#7ab3d4' : wc.text === 'ws-strong-text' ? '#f7c948' : wc.text === 'ws-gusty-text' ? '#ff8c42' : wc.text === 'ws-storm-text' ? '#ff3b5c' : 'var(--text-dim)';
+    const cellMap = {
+      condition: `<td><span class="condition-pill ${cond.pill}" style="font-size:10px;padding:3px 7px;"><span class="pill-dot"></span>${cond.label}</span></td>`,
+      wind:      `<td style="color:${windCol};font-family:'Bebas Neue',sans-serif;font-size:20px;text-align:center;">${cvtWind(h.wind)}</td>`,
+      gusts:     `<td style="color:var(--text-dim);font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${cvtWind(h.gust)}</td>`,
+      wing:      `<td style="text-align:center;">${wing ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:${wing.color};">${wing.size}</span>` : '<span style="color:var(--text-muted);font-size:11px;">—</span>'}</td>`,
+      dir:       `<td style="text-align:center;">${dirArrow}${dirLabel}</td>`,
+      weather:   `<td style="text-align:center;font-size:18px;">${WEATHER_ICONS[h.weather] || '⛅'}</td>`,
+      temp:      `<td style="color:${tempCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.temp}°</td>`,
+      tide:      tideHTML,
+      swell:     `<td style="color:${swellCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.swell}</td>`,
+      period:    `<td style="color:${periodCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.wavePeriod||'—'}</td>`,
+      cloud:     `<td style="color:${cloudCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.cloud??'—'}</td>`,
+    };
 
-    // Direction arrow SVG — points in direction wind is GOING (add 180° to meteorological bearing)
-    const dirDeg = (DIR_DEG[h.dir] || 0) + 180;
-    const arrowColor = windColor(h.wind);
-    const dirArrow = `<svg width="20" height="20" viewBox="0 0 24 24" style="transform:rotate(${dirDeg}deg);display:inline-block;">
-      <path d="M12 2 L16 10 L12 8 L8 10 Z" fill="${arrowColor}"/>
-      <line x1="12" y1="8" x2="12" y2="20" stroke="${arrowColor}" stroke-width="2" stroke-linecap="round"/>
-    </svg>`;
-
-    // Offshore indicator in direction cell
-    const dt = getDirType(h.dir, currentLocation);
-    const dirLabel = dt === 'offshore'
-      ? `<div style="font-family:'Barlow Condensed';font-size:9px;color:var(--wind-red);letter-spacing:1px;">⚠OFF</div>`
-      : dt === 'onshore'
-      ? `<div style="font-family:'Barlow Condensed';font-size:9px;color:var(--wind-yellow);letter-spacing:1px;">ON</div>`
-      : `<div style="font-family:'Barlow Condensed';font-size:9px;color:var(--wind-green);letter-spacing:1px;">✓X</div>`;
-
-    // Swell colour
-    const swellCol = h.swell > 2.0 ? '#ff3b5c' : h.swell > 1.5 ? '#ff8c42' : h.swell > 0.8 ? '#f7c948' : 'var(--sky)';
-
-    // Wave period colour (longer = cleaner)
-    const periodCol = h.wavePeriod >= 12 ? '#00e5a0' : h.wavePeriod >= 9 ? '#f7c948' : 'var(--text-dim)';
-
-    // Cloud colour
-    const cloudCol = h.cloud > 80 ? 'var(--text-dim)' : h.cloud > 50 ? '#7ab3d4' : '#f7c948';
-
-    // Temp colour
-    const tempCol = h.temp >= 20 ? '#ff8c42' : h.temp >= 14 ? '#f7c948' : h.temp >= 10 ? '#5bc4f5' : '#7ab3d4';
-
-    // Best hour star
-    const bestStar = isBest ? '<span style="color:#f7c948;font-size:10px;margin-left:2px;">★</span>' : '';
-
-    return `<tr style="${rowStyle}">
-      <td style="font-size:11px;color:var(--text-dim);letter-spacing:1px;">${formatHour(h.hour)}${bestStar}</td>
-      <td><span class="condition-pill ${cond.pill}" style="font-size:10px;padding:3px 7px;"><span class="pill-dot"></span>${cond.label}</span></td>
-      <td style="color:${windCol};font-family:'Bebas Neue',sans-serif;font-size:20px;text-align:center;">${cvtWind(h.wind)}</td>
-      <td style="color:var(--text-dim);font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${cvtWind(h.gust)}</td>
-      <td style="text-align:center;">${wing ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:${wing.color};">${wing.size}</span>` : '<span style="color:var(--text-muted);font-size:11px;">—</span>'}</td>
-      <td style="text-align:center;">${dirArrow}${dirLabel}</td>
-      <td style="text-align:center;font-size:18px;">${WEATHER_ICONS[h.weather] || '⛅'}</td>
-      <td style="color:${tempCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.temp}°</td>
-      ${tideCell}
-      <td style="color:${swellCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.swell}</td>
-      <td style="color:${periodCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.wavePeriod||'—'}</td>
-      <td style="color:${cloudCol};font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">${h.cloud??'—'}</td>
-    </tr>`;
+    const timeTd = `<td style="font-size:11px;color:var(--text-dim);letter-spacing:1px;">${formatHour(h.hour)}${bestStar}</td>`;
+    return `<tr style="${rowStyle}">${timeTd}${colOrder.map(id => cellMap[id] || '').join('')}</tr>`;
   });
   document.getElementById('forecastBody').innerHTML = rows.join('');
+}
+
+// ==================== COLUMN EDITOR MODAL ====================
+let _dragSrcIdx = null;
+
+function openColumnEditor() {
+  let order = getColOrder();
+  const modal = document.getElementById('colEditorModal');
+  if (!modal) return;
+  renderColEditorList(order);
+  modal.style.display = 'flex';
+}
+
+function closeColumnEditor() {
+  document.getElementById('colEditorModal').style.display = 'none';
+}
+
+function renderColEditorList(order) {
+  const list = document.getElementById('colEditorList');
+  if (!list) return;
+  list.innerHTML = order.map((id, i) => {
+    const col = ALL_COLUMNS.find(c => c.id === id);
+    return `<div class="col-editor-item" draggable="true"
+      data-idx="${i}" data-id="${id}"
+      ondragstart="colDragStart(event,${i})"
+      ondragover="colDragOver(event)"
+      ondrop="colDrop(event,${i})"
+      ondragend="colDragEnd(event)"
+      ontouchstart="colTouchStart(event,${i})"
+      ontouchmove="colTouchMove(event)"
+      ontouchend="colTouchEnd(event,${i})"
+      style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;cursor:grab;user-select:none;touch-action:none;">
+      <span style="font-size:18px;color:var(--text-muted);">☰</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--text-bright);letter-spacing:1px;flex:1;">${col ? col.label : id}</span>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <button onclick="colMoveUp(${i})" style="background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:0;line-height:1;" ${i===0?'disabled':''}>▲</button>
+        <button onclick="colMoveDown(${i})" style="background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:0;line-height:1;" ${i===order.length-1?'disabled':''}>▼</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function colMoveUp(idx) {
+  const order = getColOrder();
+  if (idx === 0) return;
+  [order[idx-1], order[idx]] = [order[idx], order[idx-1]];
+  saveColOrder(order);
+  renderColEditorList(order);
+  renderForecastTable();
+}
+
+function colMoveDown(idx) {
+  const order = getColOrder();
+  if (idx === order.length-1) return;
+  [order[idx], order[idx+1]] = [order[idx+1], order[idx]];
+  saveColOrder(order);
+  renderColEditorList(order);
+  renderForecastTable();
+}
+
+// Drag and drop (desktop)
+function colDragStart(e, idx) {
+  _dragSrcIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.4';
+}
+function colDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function colDrop(e, idx) {
+  e.preventDefault();
+  if (_dragSrcIdx === null || _dragSrcIdx === idx) return;
+  const order = getColOrder();
+  const [moved] = order.splice(_dragSrcIdx, 1);
+  order.splice(idx, 0, moved);
+  saveColOrder(order);
+  renderColEditorList(order);
+  renderForecastTable();
+}
+function colDragEnd(e) { e.currentTarget.style.opacity = '1'; _dragSrcIdx = null; }
+
+// Touch drag (mobile)
+let _touchDragIdx = null, _touchClone = null, _touchStartY = 0;
+function colTouchStart(e, idx) {
+  _touchDragIdx = idx;
+  _touchStartY = e.touches[0].clientY;
+  const el = e.currentTarget;
+  _touchClone = el.cloneNode(true);
+  _touchClone.style.cssText += ';position:fixed;left:' + el.getBoundingClientRect().left + 'px;top:' + el.getBoundingClientRect().top + 'px;width:' + el.offsetWidth + 'px;opacity:0.85;z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+  document.body.appendChild(_touchClone);
+  el.style.opacity = '0.3';
+}
+function colTouchMove(e) {
+  if (!_touchClone) return;
+  e.preventDefault();
+  const dy = e.touches[0].clientY - _touchStartY;
+  _touchClone.style.transform = `translateY(${dy}px)`;
+}
+function colTouchEnd(e, idx) {
+  if (_touchClone) { _touchClone.remove(); _touchClone = null; }
+  document.querySelectorAll('.col-editor-item').forEach(el => el.style.opacity = '1');
+  if (_touchDragIdx === null) return;
+  // Find which item the finger is over
+  const y = e.changedTouches[0].clientY;
+  const items = document.querySelectorAll('.col-editor-item');
+  let targetIdx = _touchDragIdx;
+  items.forEach((el, i) => {
+    const r = el.getBoundingClientRect();
+    if (y >= r.top && y <= r.bottom) targetIdx = i;
+  });
+  if (targetIdx !== _touchDragIdx) {
+    const order = getColOrder();
+    const [moved] = order.splice(_touchDragIdx, 1);
+    order.splice(targetIdx, 0, moved);
+    saveColOrder(order);
+    renderColEditorList(order);
+    renderForecastTable();
+  }
+  _touchDragIdx = null;
+}
+
+function resetColOrder() {
+  saveColOrder([...DEFAULT_COL_ORDER]);
+  renderColEditorList([...DEFAULT_COL_ORDER]);
+  renderForecastTable();
 }
 
 function renderTideChart() {
@@ -4139,10 +4265,9 @@ if(!(profile.customLocations||[]).length) {
   _store.set('wc_profile', JSON.stringify(profile));
 }
 
-// Set currentLocation — prefer homeSpot, then first available location
+// Set currentLocation — prefer homeSpot, then first available
 const _allLocs = Object.keys(getAllLocations());
 if(!currentLocation || !getAllLocations()[currentLocation]) {
-  // Use homeSpot if set and valid, otherwise first in list
   if (profile.homeSpot && getAllLocations()[profile.homeSpot]) {
     currentLocation = profile.homeSpot;
   } else {
@@ -5977,5 +6102,22 @@ window._togglePush = function() {
   }
 };
 </script>
+<!-- ====== COLUMN EDITOR MODAL ====== -->
+<div id="colEditorModal" style="display:none;position:fixed;inset:0;background:rgba(4,13,26,0.92);z-index:3000;align-items:flex-end;justify-content:center;">
+  <div style="width:100%;max-width:480px;background:var(--ocean-mid);border:1px solid var(--glass-border);border-radius:16px 16px 0 0;padding:20px 20px 36px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--sky);letter-spacing:3px;">⚙ COLUMN ORDER</div>
+      <button onclick="closeColumnEditor()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-muted);margin-bottom:16px;padding:10px 12px;background:rgba(91,196,245,0.06);border:1px solid rgba(91,196,245,0.15);border-radius:8px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">☰</span>
+      <span>Drag rows to reorder, or use the ▲▼ arrows. Your order is saved automatically.</span>
+    </div>
+    <div id="colEditorList" style="display:flex;flex-direction:column;gap:6px;"></div>
+    <button onclick="resetColOrder()" style="margin-top:16px;width:100%;padding:10px;background:rgba(255,59,92,0.06);border:1px solid rgba(255,59,92,0.2);border-radius:8px;color:var(--wind-red);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;">↺ RESET TO DEFAULT</button>
+    <button onclick="closeColumnEditor()" style="margin-top:8px;width:100%;padding:11px;background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.3);border-radius:8px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;cursor:pointer;">✓ DONE</button>
+  </div>
+</div>
+
 </body>
 </html>
