@@ -957,6 +957,17 @@
 </div>
 
 <main>
+  <!-- Stats header: TODAY/NOW toggle + settings -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;">
+    <div style="display:flex;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;overflow:hidden;flex-shrink:0;">
+      <button id="statsModeToday" onclick="setStatsMode('today')"
+        style="padding:7px 16px;border:none;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;background:rgba(0,229,160,0.2);color:var(--wind-green);transition:all 0.15s;">TODAY</button>
+      <button id="statsModNow" onclick="setStatsMode('now')"
+        style="padding:7px 16px;border:none;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;background:transparent;color:var(--text-muted);transition:all 0.15s;">NOW</button>
+    </div>
+    <button onclick="openStatsEditor()"
+      style="padding:6px 12px;background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.25);border-radius:6px;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;flex-shrink:0;">⚙ CARDS</button>
+  </div>
   <!-- Stats row -->
   <div class="stats-row" id="statsRow"></div>
 
@@ -2314,59 +2325,313 @@ function renderBanner() {
   }, 100);
 }
 
+// ==================== STATS CARD SYSTEM ====================
+let _statsMode = 'today'; // 'today' or 'now'
+
+function setStatsMode(mode) {
+  _statsMode = mode;
+  const todayBtn = document.getElementById('statsModeToday');
+  const nowBtn   = document.getElementById('statsModNow');
+  if (todayBtn) {
+    todayBtn.style.background = mode === 'today' ? 'rgba(0,229,160,0.2)' : 'transparent';
+    todayBtn.style.color      = mode === 'today' ? 'var(--wind-green)'    : 'var(--text-muted)';
+  }
+  if (nowBtn) {
+    nowBtn.style.background = mode === 'now' ? 'rgba(91,196,245,0.2)' : 'transparent';
+    nowBtn.style.color      = mode === 'now' ? 'var(--sky)'            : 'var(--text-muted)';
+  }
+  renderStats();
+}
+
+const ALL_STAT_CARDS = [
+  { id:'wind',      label:'Wind' },
+  { id:'gusts',     label:'Gusts' },
+  { id:'swell',     label:'Swell' },
+  { id:'period',    label:'Swell Period' },
+  { id:'temp',      label:'Air Temp' },
+  { id:'winddir',   label:'Wind Direction' },
+  { id:'rain',      label:'Rain Chance' },
+  { id:'winghours', label:'Wing Hours' },
+  { id:'watertemp', label:'Water Temp' },
+  { id:'wetsuit',   label:'Wetsuit' },
+  { id:'sun',       label:'Sunrise / Sunset' },
+];
+
+const DEFAULT_STAT_ORDER   = ALL_STAT_CARDS.map(c => c.id);
+const DEFAULT_STAT_VISIBLE = ['wind','gusts','swell','period','temp','winddir','winghours','watertemp','wetsuit'];
+
+function getStatConfig() {
+  try {
+    const saved = JSON.parse(_store.get('wc_stat_config') || 'null');
+    if (saved && saved.order && saved.visible) return saved;
+  } catch(e) {}
+  return { order: [...DEFAULT_STAT_ORDER], visible: [...DEFAULT_STAT_VISIBLE] };
+}
+
+function saveStatConfig(cfg) { _store.set('wc_stat_config', JSON.stringify(cfg)); }
+
 function renderStats() {
   const day = weekData[selectedDay];
   if (!day || !day.hours || !day.hours.length) return;
-  const winds = day.hours.map(h => h.wind);
-  const maxW = Math.max(...winds);
-  const avgW = Math.round(winds.reduce((a,b)=>a+b,0)/winds.length);
-  const maxGust = Math.max(...day.hours.map(h => h.gust));
-  const maxSwell = Math.max(...day.hours.map(h => h.swell));
-  const avgTemp = Math.round(day.hours.reduce((a,h)=>a+h.temp,0)/day.hours.length);
 
-  // Count wingfoil hours
+  const loc = LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation];
+  const cfg = getStatConfig();
+
+  // Current hour data
+  const realHour = new Date().getHours();
+  const nowIdx = selectedDay === 0
+    ? (day.hours.findIndex(h => h.hour >= realHour) >= 0 ? day.hours.findIndex(h => h.hour >= realHour) : day.hours.length - 1)
+    : 0;
+  const nowH = day.hours[nowIdx];
+
+  // Day summary data
+  const winds = day.hours.map(h => h.wind);
+  const maxW   = Math.max(...winds);
+  const avgW   = Math.round(winds.reduce((a,b)=>a+b,0)/winds.length);
+  const maxGust  = Math.max(...day.hours.map(h => h.gust));
+  const maxSwell = Math.max(...day.hours.map(h => h.swell));
+  const maxPeriod = Math.max(...day.hours.map(h => h.wavePeriod || 0));
+  const nowPeriod = nowH.wavePeriod || 0;
+  const avgTemp  = Math.round(day.hours.reduce((a,h)=>a+h.temp,0)/day.hours.length);
+  const maxRain  = Math.max(...day.hours.map(h => h.rain || 0));
+  const nowRain  = nowH.rain || 0;
+
+  // Dominant wind direction for TODAY
+  const dirCounts = {};
+  day.hours.forEach(h => { dirCounts[h.dir] = (dirCounts[h.dir]||0)+1; });
+  const dominantDir = Object.entries(dirCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
+
+  // Wing hours
+  const nowTime = selectedDay === 0 ? new Date().getHours() : 0;
   const wingHours = day.hours.filter(h => {
     const c = getWingCondition(h.wind, h.gust, h.swell, h.dir, currentLocation);
-    return c.cls === 'epic' || c.cls === 'good';
+    return (c.cls === 'epic' || c.cls === 'good');
+  }).length * 3;
+  const wingHoursRemaining = day.hours.filter(h => {
+    const c = getWingCondition(h.wind, h.gust, h.swell, h.dir, currentLocation);
+    return (c.cls === 'epic' || c.cls === 'good') && h.hour >= nowTime;
   }).length * 3;
 
-  document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-card-label">Max Wind</div>
-      <div class="stat-card-val" style="color:${maxW > 30 ? 'var(--wind-orange)' : 'var(--wind-green)'}">${cvtWind(maxW)}</div>
-      <div class="stat-card-sub">${unitLabel(windUnit)} — avg ${cvtWind(avgW)}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Max Gusts</div>
-      <div class="stat-card-val" style="color:var(--wind-yellow)">${cvtWind(maxGust)}</div>
-      <div class="stat-card-sub">${windUnitSuffix()} peak</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Max Swell</div>
-      <div class="stat-card-val" style="color:var(--sky)">${maxSwell}</div>
-      <div class="stat-card-sub">metres</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Air Temp</div>
-      <div class="stat-card-val ${tempClass(avgTemp)}">${avgTemp}°</div>
-      <div class="stat-card-sub">°C average</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Wing Hours</div>
-      <div class="stat-card-val" style="color:var(--wind-green)">${wingHours}</div>
-      <div class="stat-card-sub">hrs good+ conditions</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Water Temp</div>
-      <div class="stat-card-val" style="color:var(--sky)">${( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).waterTemp}°</div>
-      <div class="stat-card-sub">°C sea surface</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Wetsuit</div>
-      <div class="stat-card-val" style="color:${recommendWetsuit(( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).waterTemp).color};font-size:1em;">${recommendWetsuit(( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).waterTemp).suit}</div>
-      <div class="stat-card-sub">${recommendWetsuit(( LOCATIONS[currentLocation] || BUILTIN_SPOTS[currentLocation] ).waterTemp).tip}</div>
-    </div>
-  `;
+  // Sunrise/sunset
+  let sunriseStr = loc?.sunrise || '—', sunsetStr = loc?.sunset || '—';
+  if (loc?.lat && day?.date) {
+    try {
+      const sr = calcSunrise(loc.lat, loc.lon, day.date);
+      sunriseStr = String(sr.rise).padStart(2,'0') + ':00';
+      sunsetStr  = String(sr.set).padStart(2,'0') + ':00';
+    } catch(e) {}
+  }
+
+  const isNow = _statsMode === 'now';
+
+  // Build card data map
+  const cardData = {
+    wind: {
+      val:   isNow ? cvtWind(nowH.wind)  : cvtWind(maxW),
+      unit:  unitLabel(windUnit),
+      sub:   isNow ? 'NOW'               : `MAX TODAY · avg ${cvtWind(avgW)}`,
+      color: isNow ? windColor(nowH.wind) : (maxW > 30 ? 'var(--wind-orange)' : 'var(--wind-green)'),
+    },
+    gusts: {
+      val:   isNow ? cvtWind(nowH.gust)  : cvtWind(maxGust),
+      unit:  unitLabel(windUnit),
+      sub:   isNow ? 'NOW'               : 'MAX TODAY',
+      color: 'var(--wind-yellow)',
+    },
+    swell: {
+      val:   isNow ? nowH.swell          : maxSwell,
+      unit:  'M',
+      sub:   isNow ? 'NOW'               : 'MAX TODAY',
+      color: 'var(--sky)',
+    },
+    period: {
+      val:   isNow ? nowPeriod           : maxPeriod,
+      unit:  'S',
+      sub:   isNow ? 'NOW · longer = cleaner' : 'MAX TODAY · longer = cleaner',
+      color: (isNow ? nowPeriod : maxPeriod) >= 12 ? 'var(--wind-green)' : (isNow ? nowPeriod : maxPeriod) >= 9 ? 'var(--wind-yellow)' : 'var(--text-dim)',
+    },
+    temp: {
+      val:   isNow ? nowH.temp           : avgTemp,
+      unit:  '°C',
+      sub:   isNow ? 'NOW'               : 'AVG TODAY',
+      color: tempClass(isNow ? nowH.temp : avgTemp),
+      isClass: true,
+    },
+    winddir: {
+      val:   isNow ? nowH.dir            : dominantDir,
+      unit:  '',
+      sub:   isNow ? `NOW · ${getDirType(nowH.dir,currentLocation)==='offshore'?'⚠ OFFSHORE':getDirType(nowH.dir,currentLocation).toUpperCase()}` : `DOMINANT TODAY`,
+      color: isNow ? (getDirType(nowH.dir,currentLocation)==='offshore'?'var(--wind-red)':getDirType(nowH.dir,currentLocation)==='onshore'?'var(--wind-yellow)':'var(--wind-green)') : 'var(--text-bright)',
+      small: true,
+    },
+    rain: {
+      val:   isNow ? nowRain             : maxRain,
+      unit:  '%',
+      sub:   isNow ? 'NOW CHANCE'        : 'MAX CHANCE TODAY',
+      color: (isNow?nowRain:maxRain) > 70 ? 'var(--wind-red)' : (isNow?nowRain:maxRain) > 40 ? 'var(--wind-orange)' : (isNow?nowRain:maxRain) > 20 ? 'var(--wind-yellow)' : 'var(--wind-green)',
+    },
+    winghours: {
+      val:   isNow ? wingHoursRemaining  : wingHours,
+      unit:  'HRS',
+      sub:   isNow ? 'GOOD+ REMAINING'   : 'GOOD+ TODAY',
+      color: 'var(--wind-green)',
+    },
+    watertemp: {
+      val:   loc?.waterTemp ?? '—',
+      unit:  '°C',
+      sub:   'ESTIMATED',
+      color: 'var(--sky)',
+    },
+    wetsuit: {
+      val:   recommendWetsuit(loc?.waterTemp??12).suit,
+      unit:  '',
+      sub:   'RECOMMENDED',
+      color: recommendWetsuit(loc?.waterTemp??12).color,
+      small: true,
+    },
+    sun: {
+      val:   sunriseStr,
+      unit:  '',
+      sub:   `SUNRISE · SUNSET ${sunsetStr}`,
+      color: 'var(--wind-yellow)',
+      small: true,
+    },
+  };
+
+  const cards = cfg.order
+    .filter(id => cfg.visible.includes(id))
+    .map(id => {
+      const d = cardData[id];
+      if (!d) return '';
+      const valStyle = d.isClass
+        ? `class="stat-card-val ${d.color}"`
+        : `class="stat-card-val" style="color:${d.color};${d.small?'font-size:1.1em;':''}"`;
+      return `<div class="stat-card">
+        <div class="stat-card-label">${ALL_STAT_CARDS.find(c=>c.id===id)?.label||id}</div>
+        <div ${valStyle}>${d.val}${d.unit?`<span style="font-size:14px;opacity:0.7;margin-left:2px;">${d.unit}</span>`:''}</div>
+        <div class="stat-card-sub">${d.sub}</div>
+      </div>`;
+    });
+
+  document.getElementById('statsRow').innerHTML = cards.join('');
+}
+
+// ==================== STATS CARD EDITOR ====================
+let _statDragSrcIdx = null;
+
+function openStatsEditor() {
+  const cfg = getStatConfig();
+  renderStatsEditorList(cfg);
+  document.getElementById('statsEditorModal').style.display = 'flex';
+}
+
+function closeStatsEditor() {
+  document.getElementById('statsEditorModal').style.display = 'none';
+}
+
+function renderStatsEditorList(cfg) {
+  const list = document.getElementById('statsEditorList');
+  if (!list) return;
+  list.innerHTML = cfg.order.map((id, i) => {
+    const card = ALL_STAT_CARDS.find(c => c.id === id);
+    const isOn = cfg.visible.includes(id);
+    return `<div class="col-editor-item" draggable="true"
+      data-idx="${i}" data-id="${id}"
+      ondragstart="statDragStart(event,${i})"
+      ondragover="statDragOver(event)"
+      ondrop="statDrop(event,${i})"
+      ondragend="statDragEnd(event)"
+      ontouchstart="statTouchStart(event,${i})"
+      ontouchmove="statTouchMove(event)"
+      ontouchend="statTouchEnd(event,${i})"
+      style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:${isOn?'var(--glass)':'rgba(91,196,245,0.02)'};border:1px solid ${isOn?'var(--glass-border)':'rgba(91,196,245,0.08)'};border-radius:8px;cursor:grab;user-select:none;touch-action:none;opacity:${isOn?'1':'0.5'};">
+      <span style="font-size:16px;color:var(--text-muted);">☰</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${isOn?'var(--text-bright)':'var(--text-muted)'};letter-spacing:1px;flex:1;">${card?.label||id}</span>
+      <div style="display:flex;flex-direction:column;gap:2px;margin-right:4px;">
+        <button onclick="statMoveUp(${i})" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:0;line-height:1;" ${i===0?'disabled':''}>▲</button>
+        <button onclick="statMoveDown(${i})" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:0;line-height:1;" ${i===cfg.order.length-1?'disabled':''}>▼</button>
+      </div>
+      <button onclick="statToggleVisible('${id}')"
+        style="padding:4px 10px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;border:1px solid;background:${isOn?'rgba(0,229,160,0.15)':'rgba(255,59,92,0.08)'};border-color:${isOn?'rgba(0,229,160,0.4)':'rgba(255,59,92,0.3)'};color:${isOn?'var(--wind-green)':'var(--wind-red)'};">
+        ${isOn?'ON':'OFF'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function statToggleVisible(id) {
+  const cfg = getStatConfig();
+  const idx = cfg.visible.indexOf(id);
+  if (idx >= 0) cfg.visible.splice(idx,1);
+  else cfg.visible.push(id);
+  saveStatConfig(cfg);
+  renderStatsEditorList(cfg);
+  renderStats();
+}
+
+function statMoveUp(idx) {
+  const cfg = getStatConfig();
+  if (idx===0) return;
+  [cfg.order[idx-1], cfg.order[idx]] = [cfg.order[idx], cfg.order[idx-1]];
+  saveStatConfig(cfg); renderStatsEditorList(cfg); renderStats();
+}
+
+function statMoveDown(idx) {
+  const cfg = getStatConfig();
+  if (idx===cfg.order.length-1) return;
+  [cfg.order[idx], cfg.order[idx+1]] = [cfg.order[idx+1], cfg.order[idx]];
+  saveStatConfig(cfg); renderStatsEditorList(cfg); renderStats();
+}
+
+// Drag (desktop)
+function statDragStart(e,idx) { _statDragSrcIdx=idx; e.dataTransfer.effectAllowed='move'; e.currentTarget.style.opacity='0.4'; }
+function statDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect='move'; }
+function statDrop(e,idx) {
+  e.preventDefault();
+  if (_statDragSrcIdx===null||_statDragSrcIdx===idx) return;
+  const cfg = getStatConfig();
+  const [moved] = cfg.order.splice(_statDragSrcIdx,1);
+  cfg.order.splice(idx,0,moved);
+  saveStatConfig(cfg); renderStatsEditorList(cfg); renderStats();
+}
+function statDragEnd(e) { e.currentTarget.style.opacity='1'; _statDragSrcIdx=null; }
+
+// Touch drag (mobile)
+let _statTouchIdx=null, _statTouchClone=null, _statTouchStartY=0;
+function statTouchStart(e,idx) {
+  _statTouchIdx=idx; _statTouchStartY=e.touches[0].clientY;
+  const el=e.currentTarget;
+  _statTouchClone=el.cloneNode(true);
+  _statTouchClone.style.cssText+=';position:fixed;left:'+el.getBoundingClientRect().left+'px;top:'+el.getBoundingClientRect().top+'px;width:'+el.offsetWidth+'px;opacity:0.85;z-index:9999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+  document.body.appendChild(_statTouchClone);
+  el.style.opacity='0.3';
+}
+function statTouchMove(e) {
+  if (!_statTouchClone) return;
+  e.preventDefault();
+  _statTouchClone.style.transform=`translateY(${e.touches[0].clientY-_statTouchStartY}px)`;
+}
+function statTouchEnd(e,idx) {
+  if (_statTouchClone) { _statTouchClone.remove(); _statTouchClone=null; }
+  document.querySelectorAll('#statsEditorList .col-editor-item').forEach(el=>el.style.opacity='');
+  if (_statTouchIdx===null) return;
+  const y=e.changedTouches[0].clientY;
+  const items=document.querySelectorAll('#statsEditorList .col-editor-item');
+  let targetIdx=_statTouchIdx;
+  items.forEach((el,i)=>{ const r=el.getBoundingClientRect(); if(y>=r.top&&y<=r.bottom) targetIdx=i; });
+  if (targetIdx!==_statTouchIdx) {
+    const cfg=getStatConfig();
+    const [moved]=cfg.order.splice(_statTouchIdx,1);
+    cfg.order.splice(targetIdx,0,moved);
+    saveStatConfig(cfg); renderStatsEditorList(cfg); renderStats();
+  }
+  _statTouchIdx=null;
+}
+
+function resetStatConfig() {
+  saveStatConfig({ order:[...DEFAULT_STAT_ORDER], visible:[...DEFAULT_STAT_VISIBLE] });
+  renderStatsEditorList(getStatConfig());
+  renderStats();
 }
 
 function renderDayTabs() {
@@ -6102,6 +6367,24 @@ window._togglePush = function() {
   }
 };
 </script>
+
+<!-- ====== STATS CARD EDITOR MODAL ====== -->
+<div id="statsEditorModal" style="display:none;position:fixed;inset:0;background:rgba(4,13,26,0.92);z-index:3000;align-items:flex-end;justify-content:center;">
+  <div style="width:100%;max-width:480px;background:var(--ocean-mid);border:1px solid var(--glass-border);border-radius:16px 16px 0 0;padding:20px 20px 36px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--sky);letter-spacing:3px;">⚙ STATS CARDS</div>
+      <button onclick="closeStatsEditor()" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-muted);margin-bottom:16px;padding:10px 12px;background:rgba(91,196,245,0.06);border:1px solid rgba(91,196,245,0.15);border-radius:8px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">☰</span>
+      <span>Drag or use ▲▼ to reorder. Tap ON/OFF to show or hide each card.</span>
+    </div>
+    <div id="statsEditorList" style="display:flex;flex-direction:column;gap:6px;"></div>
+    <button onclick="resetStatConfig()" style="margin-top:16px;width:100%;padding:10px;background:rgba(255,59,92,0.06);border:1px solid rgba(255,59,92,0.2);border-radius:8px;color:var(--wind-red);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;">↺ RESET TO DEFAULT</button>
+    <button onclick="closeStatsEditor()" style="margin-top:8px;width:100%;padding:11px;background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.3);border-radius:8px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;cursor:pointer;">✓ DONE</button>
+  </div>
+</div>
+
 <!-- ====== COLUMN EDITOR MODAL ====== -->
 <div id="colEditorModal" style="display:none;position:fixed;inset:0;background:rgba(4,13,26,0.92);z-index:3000;align-items:flex-end;justify-content:center;">
   <div style="width:100%;max-width:480px;background:var(--ocean-mid);border:1px solid var(--glass-border);border-radius:16px 16px 0 0;padding:20px 20px 36px;max-height:90vh;overflow-y:auto;">
