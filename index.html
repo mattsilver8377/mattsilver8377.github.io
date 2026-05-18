@@ -1489,36 +1489,55 @@
 
 <!-- ====== ADD LOCATION MODAL ====== -->
 <div id="addLocationModal" style="display:none;position:fixed;inset:0;background:#040d1a;z-index:1000;flex-direction:column;">
-  <!-- Header bar -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--ocean-mid);border-bottom:1px solid var(--glass-border);flex-shrink:0;">
+
+  <!-- Header: title + close -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--ocean-mid);border-bottom:1px solid var(--glass-border);flex-shrink:0;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--wind-green);letter-spacing:3px;">📍 ADD LOCATION</div>
     <button onclick="closeModal('addLocationModal')" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;">✕</button>
   </div>
-  <!-- Step instruction bar -->
-  <div id="addLocInstruction" style="padding:10px 16px;background:rgba(0,229,160,0.08);border-bottom:1px solid rgba(0,229,160,0.2);font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--wind-green);letter-spacing:1px;flex-shrink:0;text-align:center;">
-    STEP 1 — TAP THE MAP TO DROP A PIN ON YOUR LAUNCH SPOT
+
+  <!-- Top control panel — always visible, never pushed off by keyboard -->
+  <div style="background:var(--ocean-mid);border-bottom:2px solid var(--glass-border);padding:10px 14px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
+
+    <!-- Step 1 indicator -->
+    <div id="addLocStep1" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.4);">
+      <div style="width:22px;height:22px;border-radius:50%;background:var(--wind-green);color:#040d1a;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--wind-green);letter-spacing:1px;">TAP THE MAP TO DROP A PIN ON YOUR LAUNCH SPOT</div>
+    </div>
+
+    <!-- Step 2 indicator — lights up after pin dropped -->
+    <div id="addLocStep2" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:rgba(91,196,245,0.05);border:1px solid rgba(91,196,245,0.15);opacity:0.4;">
+      <div style="width:22px;height:22px;border-radius:50%;background:rgba(91,196,245,0.3);color:var(--sky);font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--sky);letter-spacing:1px;">DRAG THE ARROW TO POINT TOWARD THE WATER</div>
+    </div>
+
+    <!-- Step 3: name input + save button — always visible -->
+    <div id="addLocStep3" style="display:flex;align-items:center;gap:8px;opacity:0.4;">
+      <div style="width:22px;height:22px;border-radius:50%;background:rgba(247,201,72,0.3);color:var(--wind-yellow);font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+      <input id="newLocName" type="text" placeholder="Name your spot e.g. Brighton Beach"
+        class="profile-input" style="flex:1;margin:0;"
+        enterkeyhint="done"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();document.activeElement.blur();}">
+      <button onclick="saveNewLocation()" id="addLocSaveBtn"
+        style="padding:9px 14px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:8px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;flex-shrink:0;white-space:nowrap;opacity:0.4;"
+        disabled>✓ SAVE</button>
+    </div>
+    <div id="addLocCoords" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);text-align:center;display:none;"></div>
   </div>
-  <!-- Map fills remaining space — direction arrow overlays on pin after drop -->
+
+  <!-- Map fills all remaining space -->
   <div style="position:relative;flex:1;min-height:0;">
     <div id="addLocMap" style="width:100%;height:100%;"></div>
-    <!-- Direction arrow overlay — shown on map after pin drop, anchored to pin -->
-    <div id="directionHint" style="display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(4,13,26,0.92);border:1px solid rgba(0,229,160,0.5);border-radius:10px;padding:10px 20px;z-index:1000;backdrop-filter:blur(6px);pointer-events:none;text-align:center;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-dim);letter-spacing:1px;">DRAG ARROW → POINT IT TOWARD THE WATER · THIS SETS THE BEACH FACING DIRECTION</div>
-      <div id="directionBearingDisplay" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--wind-green);letter-spacing:3px;line-height:1.1;">S · 180°</div>
+    <!-- Bearing display overlay on map -->
+    <div id="directionHint" style="display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(4,13,26,0.92);border:1px solid rgba(0,229,160,0.5);border-radius:10px;padding:8px 18px;z-index:1000;backdrop-filter:blur(6px);pointer-events:none;text-align:center;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">DRAG ARROW → POINT TOWARD THE WATER</div>
+      <div id="directionBearingDisplay" style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--wind-green);letter-spacing:3px;line-height:1.1;">S · 180°</div>
     </div>
   </div>
-  <!-- Bottom panel — name input and save -->
-  <div style="background:var(--ocean-mid);border-top:1px solid var(--glass-border);padding:14px 16px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;">
-    <div id="addLocCoords" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);text-align:center;display:none;"></div>
-    <div>
-      <label class="profile-label">LOCATION NAME</label>
-      <input id="newLocName" type="text" placeholder="e.g. Brighton Beach" class="profile-input">
-    </div>
-    <div id="newLocBearingDisplay" style="display:none;"></div>
-    <input id="newLocLat" type="hidden">
-    <input id="newLocLon" type="hidden">
-    <button onclick="saveNewLocation()" id="addLocSaveBtn" style="padding:12px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:10px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;opacity:0.5;" disabled>DROP A PIN ON THE MAP FIRST</button>
-  </div>
+
+  <input id="newLocLat" type="hidden">
+  <input id="newLocLon" type="hidden">
+  <div id="newLocBearingDisplay" style="display:none;"></div>
 </div>
 
 <script>
@@ -3561,7 +3580,13 @@ function openAddLocation() {
   const latEl = document.getElementById('newLocLat'); if(latEl) latEl.value = '';
   const lonEl = document.getElementById('newLocLon'); if(lonEl) lonEl.value = '';
   const btn = document.getElementById('addLocSaveBtn');
-  if(btn) { btn.disabled = true; btn.textContent = 'PIN A LOCATION FIRST'; btn.style.opacity = '0.5'; }
+  if(btn) { btn.disabled = true; btn.textContent = '✓ SAVE'; btn.style.opacity = '0.4'; }
+  // Reset step indicators
+  const s1=document.getElementById('addLocStep1'),s2=document.getElementById('addLocStep2'),s3=document.getElementById('addLocStep3');
+  if(s1){s1.style.background='rgba(0,229,160,0.12)';s1.style.borderColor='rgba(0,229,160,0.4)';const n=s1.querySelector('div');if(n){n.textContent='1';n.style.background='var(--wind-green)';}}
+  if(s2){s2.style.opacity='0.4';s2.style.background='rgba(91,196,245,0.05)';s2.style.borderColor='rgba(91,196,245,0.15)';}
+  if(s3){s3.style.opacity='0.4';s3.style.background='';s3.style.border='none';s3.style.padding='0';}
+  const coords=document.getElementById('addLocCoords');if(coords)coords.style.display='none';
 
   // Init compass
   initCompass();
@@ -3715,6 +3740,7 @@ function initMapArrowDrag(pinLat, pinLng) {
   function endDrag() {
     isDragging = false;
     addLocMap.dragging.enable();
+    activateStep3();
   }
 
   // Listen on the direction arrow marker element
@@ -3752,8 +3778,29 @@ function updatePinCoords(lat, lng) {
   const lonEl = document.getElementById('newLocLon'); if(lonEl) lonEl.value = lng;
   const coords = document.getElementById('addLocCoords');
   if(coords) { coords.style.display = 'block'; coords.textContent = lat.toFixed(5) + ', ' + lng.toFixed(5); }
+
+  // Activate step 2 — arrow direction
+  const step1 = document.getElementById('addLocStep1');
+  const step2 = document.getElementById('addLocStep2');
+  const step3 = document.getElementById('addLocStep3');
+  if(step1) { step1.style.background='rgba(0,229,160,0.06)'; step1.style.borderColor='rgba(0,229,160,0.2)'; step1.querySelector('div').textContent='✓'; step1.querySelector('div').style.background='rgba(0,229,160,0.3)'; }
+  if(step2) { step2.style.opacity='1'; step2.style.background='rgba(91,196,245,0.12)'; step2.style.borderColor='rgba(91,196,245,0.4)'; }
+  if(step3) { step3.style.opacity='0.6'; }
+
+  // Enable save button
   const btn = document.getElementById('addLocSaveBtn');
-  if(btn) { btn.disabled = false; btn.textContent = 'ADD LOCATION'; btn.style.opacity = '1'; }
+  if(btn) { btn.disabled = false; btn.textContent = '✓ SAVE'; btn.style.opacity = '1'; }
+}
+
+function activateStep3() {
+  // Called after arrow is dragged — fully activate name + save step
+  const step2 = document.getElementById('addLocStep2');
+  const step3 = document.getElementById('addLocStep3');
+  if(step2) { step2.style.background='rgba(91,196,245,0.06)'; step2.style.borderColor='rgba(91,196,245,0.2)'; const num=step2.querySelector('div'); if(num){num.textContent='✓';num.style.background='rgba(91,196,245,0.3)';} }
+  if(step3) { step3.style.opacity='1'; step3.style.background='rgba(247,201,72,0.06)'; step3.style.borderRadius='8px'; step3.style.padding='6px 8px'; step3.style.border='1px solid rgba(247,201,72,0.25)'; }
+  // Focus the name input
+  const nameEl = document.getElementById('newLocName');
+  if(nameEl && !nameEl.value) setTimeout(()=>nameEl.focus(), 300);
 }
 
 // ---- COMPASS DRAG ----
