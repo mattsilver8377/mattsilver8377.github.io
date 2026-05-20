@@ -1350,6 +1350,9 @@
     <div style="margin-bottom:20px;">
       <label class="profile-label" style="font-size:12px;letter-spacing:2px;">🔔 WIND ALERTS</label>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin:4px 0 10px;">Set up multiple alerts for different spots and conditions.</div>
+      <div id="pushNoAlertsWarn" style="display:none;margin-bottom:10px;padding:10px 14px;background:rgba(255,140,66,0.08);border:1px solid rgba(255,140,66,0.3);border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--wind-orange);letter-spacing:1px;">
+        ⚠ Push is enabled but you have no active alerts. Tap + ADD ALERT below to set one up — otherwise you won't receive any notifications.
+      </div>
       <div id="pushNotifSection" style="margin-bottom:14px;padding:10px 14px;background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.2);border-radius:8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <div>
@@ -4866,35 +4869,40 @@ async function subscribePush() {
 async function savePushPrefsToFirestore(token) {
   if (!_fbDb || !wcUser) return;
   try {
-    // Get all enabled alerts from multi-alert system
-    const alerts = (profile.alerts || []).filter(a => a.enabled !== false);
-    const n = profile.notif || {};
+    // Only send alerts that are explicitly enabled and have a minWind set
+    const alerts = (profile.alerts || []).filter(a =>
+      a.enabled !== false &&
+      a.minWind &&
+      a.location &&
+      getAllLocations()[a.location] // verify location still exists in user's spots
+    );
 
-    // Build alertPrefs as a clean array - Cloud Function iterates this
+    // If user has NO configured alerts, write empty array and disable
+    // This prevents phantom notifications for Eastbourne or other defaults
+    if (!alerts.length) {
+      await _fbDb.collection('users').doc(wcUser.uid).set({
+        fcmToken:    token || profile.fcmToken || null,
+        pushEnabled: true,
+        alertPrefs:  [], // empty = Cloud Function will not fire
+      }, { merge: true });
+      console.log('[WingCast] No active alerts — push prefs cleared');
+      return;
+    }
+
     const ALL_COMPASS_DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-    const prefsArray = alerts.length ? alerts.map(a => ({
-      location:     a.location || profile.homeSpot || 'eastbourne',
-      minWind:      a.minWind  || 10,
-      maxWind:      a.maxWind  || 40,
-      // dirs:null means all directions - replace with explicit all-dirs array
-      dirs:         (a.dirs && a.dirs.length) ? a.dirs : ALL_COMPASS_DIRS,
-      days:         (a.days && a.days.length) ? a.days : [0,1,2,3,4,5,6],
-      timeFrom:     a.timeFrom || '07:00',
-      timeTo:       a.timeTo   || '21:00',
-      lookahead:    a.lookahead != null ? a.lookahead : 1,
+    const prefsArray = alerts.map(a => ({
+      location:      a.location,
+      minWind:       a.minWind,
+      maxWind:       a.maxWind || null,
+      // Empty dirs array means user hasn't set directions — treat as ALL
+      // Non-empty array means user explicitly chose directions — respect exactly
+      dirs:          (a.dirs && a.dirs.length) ? a.dirs : ALL_COMPASS_DIRS,
+      days:          (a.days && a.days.length) ? a.days : [0,1,2,3,4,5,6],
+      timeFrom:      a.timeFrom  || '07:00',
+      timeTo:        a.timeTo    || '21:00',
+      lookahead:     a.lookahead != null ? a.lookahead : 1,
       cooldownHours: a.cooldownHours || 6,
-    })) : [{
-      // Fallback single alert from legacy profile.notif
-      location:     n.location || profile.homeSpot || 'eastbourne',
-      minWind:      n.minWind  || 10,
-      maxWind:      n.maxWind  || 40,
-      dirs:         (n.dirs && n.dirs.length) ? n.dirs : ALL_COMPASS_DIRS,
-      days:         [0,1,2,3,4,5,6],
-      timeFrom:     n.timeFrom || '07:00',
-      timeTo:       n.timeTo   || '21:00',
-      lookahead:    1,
-      cooldownHours: 6,
-    }];
+    }));
 
     await _fbDb.collection('users').doc(wcUser.uid).set({
       fcmToken:    token || profile.fcmToken || null,
@@ -4902,7 +4910,8 @@ async function savePushPrefsToFirestore(token) {
       alertPrefs:  prefsArray,
     }, { merge: true });
 
-    console.log('[WingCast] Push prefs saved:', prefsArray.length, 'alert(s), dirs:', prefsArray[0].dirs);
+    console.log('[WingCast] Push prefs saved:', prefsArray.length, 'alert(s)');
+    prefsArray.forEach((p,i) => console.log(`  Alert ${i+1}: ${p.location} ${p.minWind}-${p.maxWind||'∞'}kts dirs:${p.dirs.join(',')}`));
   } catch(e) {
     console.warn('[WingCast] Could not save push prefs:', e.message);
   }
@@ -6274,11 +6283,20 @@ function _deleteAlert(idx) {
   if(!confirm('Delete this alert?'))return;
   const alerts=getAlerts(); alerts.splice(idx,1); saveAlerts(alerts);
   renderSavedAlertsList(); showToast('Alert deleted');
+  // Sync to Firestore so Cloud Function stops firing for deleted alert
+  if(profile.pushEnabled && profile.fcmToken) {
+    setTimeout(() => savePushPrefsToFirestore(profile.fcmToken), 400);
+  }
 }
 function _toggleAlertEnabled(idx) {
   const alerts=getAlerts();
   alerts[idx].enabled=alerts[idx].enabled===false?true:false;
-  saveAlerts(alerts); renderSavedAlertsList();
+  saveAlerts(alerts);
+  renderSavedAlertsList();
+  // Sync to Firestore so Cloud Function respects enabled/disabled state
+  if(profile.pushEnabled && profile.fcmToken) {
+    setTimeout(() => savePushPrefsToFirestore(profile.fcmToken), 400);
+  }
 }
 
 function _checkWindAlerts() {
@@ -6286,11 +6304,21 @@ function _checkWindAlerts() {
   const all=getAllLocations();
   const alerts=(profile.alerts||[]).filter(a=>a.enabled!==false);
   if(!alerts.length&&profile.notif?.minWind) alerts.push({...profile.notif,enabled:true});
-  if(!alerts.length){ae.style.display='none';return;}
+  if(!alerts.length){
+    ae.style.display='none';
+    // Warn user if push is enabled but no alerts configured
+    const pushWarn = document.getElementById('pushNoAlertsWarn');
+    if(pushWarn) pushWarn.style.display = (profile.pushEnabled && profile.fcmToken) ? 'block' : 'none';
+    return;
+  }
+  const pushWarn = document.getElementById('pushNoAlertsWarn');
+  if(pushWarn) pushWarn.style.display = 'none';
   const lines=[];
   alerts.forEach(n=>{
     const minW=n.minWind,maxW=n.maxWind; if(!minW)return;
     const watchLoc=n.location||profile.homeSpot||currentLocation;
+    // Skip alert if location no longer exists in user's spots
+    if(!getAllLocations()[watchLoc]) return;
     const allowedDirs=n.dirs?.length?n.dirs:null;
     const allowedDays=n.days||[0,1,2,3,4,5,6];
     const lookahead=n.lookahead??1;
