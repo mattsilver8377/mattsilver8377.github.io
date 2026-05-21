@@ -1144,12 +1144,14 @@
     </div>
     <!-- Locations -->
     <div class="profile-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div class="profile-section-title" style="margin:0;">MY LOCATIONS</div>
         <button onclick="openAddLocation()" class="profile-add-btn" style="color:var(--wind-green);border-color:rgba(0,229,160,0.25);background:rgba(0,229,160,0.08);">+ ADD LOCATION</button>
       </div>
+      <div style="margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+        <span>🏠</span><span>Hold a location to set it as your home spot</span>
+      </div>
       <div id="locationList" style="display:flex;flex-direction:column;gap:8px;"></div>
-      <div style="margin-top:10px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);">Tap a spot on the map to add it. Live weather worldwide.</div>
     </div>
 
     <!-- Built-in Spots Browser -->
@@ -3564,11 +3566,62 @@ function renderLocationList() {
     el.innerHTML='<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;color:var(--text-muted);text-align:center;padding:14px;">No locations added yet.<br>Tap + ADD LOCATION to get started.</div>';
     return;
   }
-  el.innerHTML=Object.entries(locs).map(([k,v])=>'<div class="quiver-item">'+
-    '<div style="font-size:15px;min-width:26px;">📍</div>'+
-    '<div class="quiver-name">'+v.name+(v.lat?'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;color:var(--text-muted);">'+v.lat.toFixed(3)+', '+v.lon.toFixed(3)+'</div>':'')+'</div>'+
-    '<button class="quiver-del" onclick="deleteLocation(\''+k+'\')">✕</button>'+
-    '</div>').join('');
+  el.innerHTML=Object.entries(locs).map(([k,v])=>{
+    const isHome = profile.homeSpot === k;
+    return '<div class="quiver-item" id="loc_'+k+'" '+
+      'oncontextmenu="setHomeSpot(\''+k+'\');return false;" '+
+      'ontouchstart="_locTouchStart(event,\''+k+'\')" '+
+      'ontouchend="_locTouchEnd(event)" '+
+      'ontouchmove="_locTouchCancel()" '+
+      'style="cursor:pointer;user-select:none;'+(isHome?'background:rgba(0,229,160,0.08);border-color:rgba(0,229,160,0.3);':'')+'">'+
+      '<div style="font-size:15px;min-width:26px;">'+(isHome?'🏠':'📍')+'</div>'+
+      '<div class="quiver-name">'+
+        '<div style="display:flex;align-items:center;gap:6px;">'+v.name+
+          (isHome?'<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:9px;color:var(--wind-green);letter-spacing:1px;padding:1px 5px;background:rgba(0,229,160,0.15);border-radius:3px;border:1px solid rgba(0,229,160,0.3);">HOME</span>':'')+
+        '</div>'+
+        (v.lat?'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:10px;color:var(--text-muted);">'+v.lat.toFixed(3)+', '+v.lon.toFixed(3)+'</div>':'')+
+      '</div>'+
+      '<button class="quiver-del" onclick="event.stopPropagation();deleteLocation(\''+k+'\')">✕</button>'+
+    '</div>';
+  }).join('');
+  attachLocLongPress();
+}
+
+// Long-press detection for mobile touch
+let _locHoldTimer=null, _locHoldMoved=false;
+function _locTouchStart(e,key) {
+  _locHoldMoved=false;
+  _locHoldTimer=setTimeout(()=>{ if(!_locHoldMoved) setHomeSpot(key); }, 600);
+}
+function _locTouchEnd(e) { clearTimeout(_locHoldTimer); }
+function _locTouchCancel() { _locHoldMoved=true; clearTimeout(_locHoldTimer); }
+
+// Desktop long-press (mousedown hold)
+function attachLocLongPress() {
+  document.querySelectorAll('[id^="loc_"]').forEach(el=>{
+    let t=null;
+    el.addEventListener('mousedown',function(e){
+      if(e.button!==0||e.target.classList.contains('quiver-del'))return;
+      const key=el.id.replace('loc_','');
+      t=setTimeout(()=>setHomeSpot(key),600);
+    });
+    el.addEventListener('mouseup',()=>clearTimeout(t));
+    el.addEventListener('mouseleave',()=>clearTimeout(t));
+  });
+}
+
+function setHomeSpot(key) {
+  const locs=getAllLocations();
+  const loc=locs[key]; if(!loc) return;
+  if(profile.homeSpot===key){ showToast('🏠 '+loc.name+' is already your home spot'); return; }
+  if(confirm('Set "'+loc.name+'" as your home spot?\n\nThe app will open here by default.')) {
+    profile.homeSpot=key;
+    _store.set('wc_profile',JSON.stringify(profile));
+    if(wcUser) _store.set('wc_profile_'+wcUser.uid,JSON.stringify(profile));
+    const sel=document.getElementById('pHomeSpot'); if(sel) sel.value=key;
+    renderLocationList();
+    showToast('🏠 Home spot set to '+loc.name);
+  }
 }
 
 // ---- ADD LOCATION MODAL ----
