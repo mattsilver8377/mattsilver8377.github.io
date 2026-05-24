@@ -1284,6 +1284,7 @@
         <div><label class="profile-label">WING USED</label><select id="sWing" class="profile-select"></select></div>
         <div><label class="profile-label">BOARD USED</label><select id="sBoard" class="profile-select"></select></div>
       </div>
+      <div><label class="profile-label">FOIL USED</label><select id="sFoil" class="profile-select"></select></div>
       <div><label class="profile-label">WETSUIT WORN</label><select id="sWetsuit" class="profile-select"></select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><label class="profile-label">WIND (KTS)</label><input id="sWind" type="number" placeholder="Auto-filled" class="profile-input"></div>
@@ -1360,7 +1361,6 @@
       <label class="profile-label">CONDITION REPORTS</label>
       <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
         <div onclick="toggleAnonymous()" id="anonToggle" style="width:44px;height:24px;border-radius:12px;background:rgba(255,59,92,0.15);border:1px solid rgba(255,59,92,0.3);cursor:pointer;position:relative;transition:all 0.2s;">
-      <div><label class="profile-label">FOIL USED</label><select id="sFoil" class="profile-select"></select></div>
           <div id="anonToggleThumb" style="width:18px;height:18px;border-radius:50%;background:var(--sky);position:absolute;top:2px;left:4px;transition:left 0.2s;"></div>
         </div>
         <span id="anonToggleLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);">POST ANONYMOUSLY — off (name shown)</span>
@@ -1368,8 +1368,8 @@
     </div>
         <!-- Wind alerts — multi-alert system -->
     <div style="margin-bottom:20px;">
-      <label class="profile-label" style="font-size:12px;letter-spacing:2px;">🔔 WIND ALERTS</label>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin:4px 0 10px;">Set up multiple alerts for different spots and conditions.</div>
+      <label class="profile-label" style="font-size:12px;letter-spacing:2px;">🔔 WIND ALERTS <span style="font-size:10px;color:var(--sky);letter-spacing:1px;font-weight:400;">(ANDROID ONLY)</span></label>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin:4px 0 10px;">Set up alerts to get notified when wind hits your target conditions. <span style="color:var(--sky);">Available on Android devices only.</span></div>
       <div id="pushNoAlertsWarn" style="display:none;margin-bottom:10px;padding:10px 14px;background:rgba(255,140,66,0.08);border:1px solid rgba(255,140,66,0.3);border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--wind-orange);letter-spacing:1px;">
         ⚠ Push is enabled but you have no active alerts. Tap + ADD ALERT below to set one up — otherwise you won't receive any notifications.
       </div>
