@@ -3532,8 +3532,9 @@ let profile = {};
 try { profile = JSON.parse(_store.get('wc_profile') || '{}'); } catch(e) { profile = {}; }
 if (!profile.weight)   profile.weight   = 95;
 if (!profile.level)    profile.level    = 'advanced';
-if (!profile.quiver)   profile.quiver   = [{size:6.0,name:'6m Wing'},{size:5.5,name:'5.5m Wing'},{size:4.0,name:'4m Wing'}];
+if (!profile.quiver)   profile.quiver   = [];
 if (!profile.boards)   profile.boards   = [];
+if (!profile.foils)    profile.foils    = [];
 if (!profile.wetsuits) profile.wetsuits = [];
 
 function saveProfile() {
@@ -5389,7 +5390,7 @@ function initFirebaseAuth() {
         try { profile = JSON.parse(_store.get(key) || _store.get('wc_profile') || '{}'); } catch(e) { profile = {}; }
         if (!profile.weight)   profile.weight   = 95;
         if (!profile.level)    profile.level    = 'advanced';
-        if (!profile.quiver)   profile.quiver   = [{size:6.0,name:'6m Wing'},{size:5.5,name:'5.5m Wing'},{size:4.0,name:'4m Wing'}];
+        if (!profile.quiver)   profile.quiver   = [];
         if (!profile.boards)   profile.boards   = [];
         if (!profile.foils)    profile.foils    = [];
         if (!profile.wetsuits) profile.wetsuits = [];
