@@ -3537,12 +3537,34 @@ if (!profile.boards)   profile.boards   = [];
 if (!profile.foils)    profile.foils    = [];
 if (!profile.wetsuits) profile.wetsuits = [];
 
+
+function syncGearToFirestore() {
+  if (!_fbDb || !wcUser) return;
+  _fbDb.collection('users').doc(wcUser.uid).set({
+    profile: {
+      name: profile.name || '',
+      weight: profile.weight || 95,
+      level: profile.level || 'advanced',
+      homeSpot: profile.homeSpot || '',
+      avatar: profile.avatar || '',
+      quiver: profile.quiver || [],
+      boards: profile.boards || [],
+      foils: profile.foils || [],
+      wetsuits: profile.wetsuits || [],
+      alerts: profile.alerts || [],
+      customLocations: profile.customLocations || [],
+    }
+  }, { merge: true }).catch(e => console.warn('[WingCast] Gear sync failed:', e.message));
+}
+
 function saveProfile() {
   const n=document.getElementById('pName'); if(n) profile.name=n.value;
   const w=document.getElementById('pWeight'); if(w) profile.weight=parseFloat(w.value)||profile.weight;
   const l=document.getElementById('pLevel'); if(l) profile.level=l.value;
   const h=document.getElementById('pHomeSpot'); if(h) profile.homeSpot=h.value;
   _store.set('wc_profile', JSON.stringify(profile));
+  if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile));
+  syncGearToFirestore();
   updateProfileHeader(); rebuildWingRecs();
 }
 
@@ -4117,6 +4139,8 @@ function saveNewWing() {
   profile.quiver.push({size,name});
   _store.set('wc_profile', JSON.stringify(profile));
   if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile));
+  syncGearToFirestore();
+  syncGearToFirestore();
   closeModal('addWingModal');
   renderQuiverList(); rebuildWingRecs();
 }
@@ -4127,7 +4151,9 @@ function deleteWing(idx) {
   const sorted=[...(profile.quiver||[])].sort((a,b)=>b.size-a.size); const rm=sorted[idx];
   profile.quiver=profile.quiver.filter(w=>!(w.size===rm.size&&w.name===rm.name));
   _store.set('wc_profile', JSON.stringify(profile));
-  if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile)); renderQuiverList();
+  if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile));
+  syncGearToFirestore();
+  renderQuiverList();
 }
 
 // ---- BOARDS MODAL ----
@@ -4145,13 +4171,15 @@ function saveNewBoard() {
   profile.boards.push({name,volume:vol});
   _store.set('wc_profile', JSON.stringify(profile));
   if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile));
+  syncGearToFirestore();
+  syncGearToFirestore();
   closeModal('addBoardModal'); renderBoardList();
 }
 
 function addBoard() { openAddBoard(); } // alias
 
 function deleteBoard(idx) { profile.boards.splice(idx,1); _store.set('wc_profile', JSON.stringify(profile));
-  if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile)); renderBoardList(); }
+  if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile)); syncGearToFirestore(); renderBoardList(); }
 
 // ---- FOILS ----
 function openAddFoil() {
@@ -4177,6 +4205,7 @@ function saveNewFoil() {
   profile.foils.push({ name: name, size: size, mast: mast, notes: notes });
   _store.set('wc_profile', JSON.stringify(profile));
   if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile));
+  syncGearToFirestore();
   closeModal('addFoilModal');
   renderFoilList();
 }
@@ -4186,6 +4215,7 @@ function deleteFoil(idx) {
   profile.foils.splice(idx, 1);
   _store.set('wc_profile', JSON.stringify(profile));
   if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile));
+  syncGearToFirestore();
   renderFoilList();
 }
 
@@ -4245,13 +4275,15 @@ function saveNewWetsuit() {
   profile.wetsuits.push({thickness,name,minTemp});
   _store.set('wc_profile', JSON.stringify(profile));
   if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile));
+  syncGearToFirestore();
+  syncGearToFirestore();
   closeModal('addWetsuitModal'); renderWetsuitList();
 }
 
 function addWetsuit() { openAddWetsuit(); } // alias
 
 function deleteWetsuit(idx) { profile.wetsuits.splice(idx,1); _store.set('wc_profile', JSON.stringify(profile));
-  if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile)); renderWetsuitList(); }
+  if(wcUser) _store.set('wc_profile_'+wcUser.uid, JSON.stringify(profile)); syncGearToFirestore(); renderWetsuitList(); }
 
 // ---- MODAL HELPERS ----
 function closeModal(id) {
@@ -5409,9 +5441,10 @@ function initFirebaseAuth() {
               if (fp.level)   profile.level   = fp.level;
               if (fp.homeSpot) profile.homeSpot = fp.homeSpot;
               if (fp.avatar)  profile.avatar  = fp.avatar;
-              if (fp.quiver?.length)  profile.quiver  = fp.quiver;
-              if (fp.boards?.length)  profile.boards  = fp.boards;
-              if (fp.wetsuits?.length) profile.wetsuits = fp.wetsuits;
+              if (Array.isArray(fp.quiver))   profile.quiver   = fp.quiver;
+              if (Array.isArray(fp.boards))   profile.boards   = fp.boards;
+              if (Array.isArray(fp.foils))    profile.foils    = fp.foils;
+              if (Array.isArray(fp.wetsuits)) profile.wetsuits = fp.wetsuits;
               if (fp.alerts?.length)  profile.alerts  = fp.alerts;
               if (fp.customLocations?.length) {
                 profile.customLocations = fp.customLocations;
