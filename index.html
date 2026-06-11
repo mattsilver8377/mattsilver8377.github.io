@@ -916,11 +916,6 @@
 
 <div id="conditionsBanner"></div>
 
-<!-- 10-day wind strip -->
-<div id="windStrip" style="margin:0 16px 12px;background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;overflow:hidden;cursor:pointer;" onclick="windStripTap(event)">
-  <canvas id="windStripCanvas" height="56" style="display:block;width:100%;height:56px;"></canvas>
-</div>
-
 <!-- AI Daily Summary -->
 <div id="aiSummaryBar" style="display:none;margin:0 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(91,196,245,0.04));border:1px solid rgba(0,229,160,0.2);border-radius:10px;">
   <div style="display:flex;align-items:flex-start;gap:10px;">
@@ -1351,6 +1346,38 @@
         <span id="warningToggleLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text-dim);">ON — visible</span>
       </div>
     </div>
+    <!-- Forecast evaluation window -->
+    <div style="margin-bottom:20px;">
+      <label class="profile-label">FORECAST EVALUATION WINDOW</label>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--text-muted);margin:4px 0 8px;">Day scores, wing-hour counts and condition summaries only use hours within this window — no more 3am "EPIC" readings.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label class="profile-label">FROM</label>
+          <select id="forecastStartHourSel" onchange="saveForecastWindow()" class="profile-select">
+            <option value="0">00:00 midnight</option>
+            <option value="5">05:00</option>
+            <option value="6">06:00 sunrise-ish</option>
+            <option value="7" selected>07:00</option>
+            <option value="8">08:00</option>
+            <option value="9">09:00</option>
+            <option value="10">10:00</option>
+          </select>
+        </div>
+        <div>
+          <label class="profile-label">UNTIL</label>
+          <select id="forecastEndHourSel" onchange="saveForecastWindow()" class="profile-select">
+            <option value="14">14:00</option>
+            <option value="16">16:00</option>
+            <option value="18">18:00</option>
+            <option value="19">19:00</option>
+            <option value="20" selected>20:00</option>
+            <option value="21">21:00</option>
+            <option value="22">22:00</option>
+            <option value="23">23:00</option>
+          </select>
+        </div>
+      </div>
+    </div>
     <!-- Daily summary -->
     <div style="margin-bottom:20px;">
       <label class="profile-label">DAILY FORECAST SUMMARY</label>
@@ -1534,16 +1561,17 @@
 </div>
 
 <!-- ====== ADD LOCATION MODAL ====== -->
-<div id="addLocationModal" style="display:none;position:fixed;inset:0;background:#040d1a;z-index:1000;flex-direction:column;">
+<div id="addLocationModal" style="display:none;position:fixed;inset:0;background:#040d1a;z-index:2500;flex-direction:column;">
 
-  <!-- Header: title + close -->
+  <!-- Header: cancel + title + spacer -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--ocean-mid);border-bottom:1px solid var(--glass-border);flex-shrink:0;">
+    <button onclick="closeModal('addLocationModal')" style="background:none;border:none;color:var(--sky);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:5px;">← CANCEL</button>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--wind-green);letter-spacing:3px;">📍 ADD LOCATION</div>
-    <button onclick="closeModal('addLocationModal')" style="background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;line-height:1;">✕</button>
+    <div style="width:80px;"></div>
   </div>
 
   <!-- Top control panel — always visible, never pushed off by keyboard -->
-  <div style="background:var(--ocean-mid);border-bottom:2px solid var(--glass-border);padding:10px 14px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
+  <div style="background:var(--ocean-mid);border-bottom:2px solid var(--glass-border);padding:12px 14px 10px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
 
     <!-- Step 1 indicator -->
     <div id="addLocStep1" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.4);">
@@ -1562,7 +1590,7 @@
       <div style="width:22px;height:22px;border-radius:50%;background:rgba(247,201,72,0.3);color:var(--wind-yellow);font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
       <input id="newLocName" type="text" placeholder="Name your spot e.g. Brighton Beach"
         class="profile-input" style="flex:1;margin:0;"
-        enterkeyhint="done"
+        enterkeyhint="done" readonly
         onkeydown="if(event.key==='Enter'){event.preventDefault();document.activeElement.blur();}">
       <button onclick="saveNewLocation()" id="addLocSaveBtn"
         style="padding:9px 14px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:8px;color:var(--wind-green);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;flex-shrink:0;white-space:nowrap;opacity:0.4;"
@@ -2294,7 +2322,6 @@ function changeLocation() {
 function renderAll() {
   renderDate();
   renderBanner();
-  renderWindStrip();
   renderStats();
   renderDayTabs();
   renderForecastTable();
@@ -2307,106 +2334,6 @@ function renderDate() {
   const el = document.getElementById('currentDate');
   if (!el) return;
   el.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
-}
-
-// ==================== 10-DAY WIND STRIP ====================
-function renderWindStrip() {
-  const canvas = document.getElementById('windStripCanvas');
-  if (!canvas || !weekData.length) return;
-
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 360;
-  const H = 56;
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const days = weekData;
-  const nDays = days.length;
-  const dayW = W / nDays;
-  const labelH = 16;   // top label row
-  const barTop = labelH + 1;
-  const barH = H - barTop - 1;
-
-  // Speed→colour matching Windfinder palette
-  function stripColor(kts) {
-    if (kts <  8) return '#1a3a5c';   // calm – dark blue
-    if (kts < 12) return '#2176ae';   // light – mid blue
-    if (kts < 16) return '#00c896';   // good – teal green
-    if (kts < 22) return '#00e5a0';   // perfect – bright green
-    if (kts < 28) return '#f7c948';   // strong – yellow
-    if (kts < 35) return '#ff8c42';   // gusty – orange
-    return '#ff3b5c';                  // storm – red
-  }
-
-  const start = profile.forecastStartHour ?? 7;
-  const end   = profile.forecastEndHour   ?? 20;
-  const totalSlots = days.reduce((a, d) => a + (d.hours || []).filter(h => h.hour >= start && h.hour <= end).length, 0);
-  const slotW = totalSlots > 0 ? W / totalSlots : dayW;
-
-  let x = 0;
-  days.forEach((day, di) => {
-    const hours = (day.hours || []).filter(h => h.hour >= start && h.hour <= end);
-    const dayPxStart = x;
-    const dayPxW = hours.length * slotW;
-
-    // Day label background
-    ctx.fillStyle = di === selectedDay ? 'rgba(0,229,160,0.18)' : (di % 2 === 0 ? 'rgba(7,30,56,0.6)' : 'rgba(4,13,26,0.6)');
-    ctx.fillRect(dayPxStart, 0, dayPxW, H);
-
-    // Selected day indicator line at top
-    if (di === selectedDay) {
-      ctx.fillStyle = '#00e5a0';
-      ctx.fillRect(dayPxStart, 0, dayPxW, 2);
-    }
-
-    // Day label
-    const label = di === 0 ? 'Today' : day.date.toLocaleDateString('en-GB', { weekday: 'short' });
-    ctx.fillStyle = di === selectedDay ? '#00e5a0' : '#7ab3d4';
-    ctx.font = `${di === selectedDay ? 700 : 500} 10px 'Barlow Condensed', sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, dayPxStart + dayPxW / 2, labelH / 2);
-
-    // Wind bars — each 3-hour slot
-    hours.forEach(h => {
-      const pct = Math.min(h.wind / 35, 1);
-      const bH  = Math.max(2, Math.round(pct * barH));
-      ctx.fillStyle = stripColor(h.wind);
-      ctx.fillRect(x, barTop + (barH - bH), slotW - 0.5, bH);
-
-      // Tiny offshore warning dot
-      if (getDirType(h.dir, currentLocation) === 'offshore' && h.wind >= 8) {
-        ctx.fillStyle = '#ff3b5c';
-        ctx.fillRect(x, barTop, slotW - 0.5, 2);
-      }
-      x += slotW;
-    });
-
-    // Day divider
-    ctx.strokeStyle = 'rgba(91,196,245,0.12)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(dayPxStart, 0);
-    ctx.lineTo(dayPxStart, H);
-    ctx.stroke();
-  });
-}
-
-function windStripTap(e) {
-  const canvas = document.getElementById('windStripCanvas');
-  if (!canvas || !weekData.length) return;
-  const rect = canvas.getBoundingClientRect();
-  const tapX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  const W = rect.width;
-  const di = Math.floor(tapX / (W / weekData.length));
-  const clamped = Math.max(0, Math.min(weekData.length - 1, di));
-  if (!wcUserPro && clamped >= FREE_DAY_LIMIT) { openProModal(); return; }
-  selectDay(clamped);
-  renderWindStrip();
 }
 
 function renderBanner() {
@@ -2566,13 +2493,13 @@ function renderStats() {
   day.hours.forEach(h => { dirCounts[h.dir] = (dirCounts[h.dir]||0)+1; });
   const dominantDir = Object.entries(dirCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
 
-  // Wing hours
+  // Wing hours — only within user's forecast evaluation window
   const nowTime = selectedDay === 0 ? new Date().getHours() : 0;
-  const wingHours = day.hours.filter(h => {
+  const wingHours = forecastHours(day).filter(h => {
     const c = getWingCondition(h.wind, h.gust, h.swell, h.dir, currentLocation);
     return (c.cls === 'epic' || c.cls === 'good');
   }).length * 3;
-  const wingHoursRemaining = day.hours.filter(h => {
+  const wingHoursRemaining = forecastHours(day).filter(h => {
     const c = getWingCondition(h.wind, h.gust, h.swell, h.dir, currentLocation);
     return (c.cls === 'epic' || c.cls === 'good') && h.hour >= nowTime;
   }).length * 3;
@@ -2815,7 +2742,7 @@ function renderDayTabs() {
 
 function getBestCondition(day) {
   let best = { cls: 'poor', score: 'score-poor' };
-  for (const h of day.hours) {
+  for (const h of forecastHours(day)) {
     const c = getWingCondition(h.wind, h.gust, h.swell, h.dir, currentLocation);
     if (c.cls === 'epic') return c;
     if (c.cls === 'good') best = c;
@@ -2830,7 +2757,6 @@ function selectDay(i) {
   if (mapAnimating) toggleMapAnimation();
   renderStats();
   renderDayTabs();
-  renderWindStrip();
   renderForecastTable();
   renderTideChart();
   // Update map particles and markers for newly selected day
@@ -3808,7 +3734,7 @@ function openAddLocation() {
   if (!modal) return;
   modal.style.display = 'flex';
 
-  const nameEl = document.getElementById('newLocName'); if(nameEl) nameEl.value = '';
+  const nameEl = document.getElementById('newLocName'); if(nameEl) { nameEl.value = ''; nameEl.setAttribute('readonly',''); }
   const latEl = document.getElementById('newLocLat'); if(latEl) latEl.value = '';
   const lonEl = document.getElementById('newLocLon'); if(lonEl) lonEl.value = '';
   const btn = document.getElementById('addLocSaveBtn');
@@ -4046,7 +3972,7 @@ function activateStep3() {
     step3.style.border='1px solid rgba(247,201,72,0.25)';
   }
   const nameEl = document.getElementById('newLocName');
-  if(nameEl && !nameEl.value) setTimeout(()=>nameEl.focus(), 300);
+  if(nameEl) { nameEl.removeAttribute('readonly'); if(!nameEl.value) setTimeout(()=>nameEl.focus(), 300); }
 }
 
 // ---- COMPASS DRAG ----
@@ -4413,8 +4339,27 @@ function openSettings() {
   const tg=document.getElementById('aiSummaryToggle'); if(tg) tg.style.background=on?'rgba(0,229,160,0.2)':'rgba(255,59,92,0.15)';
   const lb=document.getElementById('aiSummaryToggleLabel'); if(lb) lb.textContent=on?'ON — shown on forecast':'OFF — hidden';
   if (typeof updateAnonToggle === 'function') updateAnonToggle();
+  // Restore forecast window selects
+  const fs=document.getElementById('forecastStartHourSel'); if(fs) fs.value=String(profile.forecastStartHour??7);
+  const fe=document.getElementById('forecastEndHourSel');   if(fe) fe.value=String(profile.forecastEndHour??20);
 }
 function closeSettings() { closeModal('settingsModal'); }
+
+function saveForecastWindow() {
+  const fs=document.getElementById('forecastStartHourSel');
+  const fe=document.getElementById('forecastEndHourSel');
+  profile.forecastStartHour = fs ? parseInt(fs.value) : 7;
+  profile.forecastEndHour   = fe ? parseInt(fe.value) : 20;
+  _store.set('wc_profile', JSON.stringify(profile));
+  renderDayTabs(); renderStats(); loadAISummary(); renderSessions();
+}
+
+// Returns hours within the user's forecast evaluation window for a given day object
+function forecastHours(dayObj) {
+  const start = profile.forecastStartHour ?? 7;
+  const end   = profile.forecastEndHour   ?? 20;
+  return (dayObj?.hours || []).filter(h => h.hour >= start && h.hour <= end);
+}
 
 // ---- AVATAR ----
 const AVATARS = ['🤙','🏄','🌊','🤿','🏖️','🦈','🐬','⛵','🌬️','💨','🎯','🏆','🔥','⚡','🌟','🤸','🧘','🏋️','🚀','🎮'];
@@ -4564,7 +4509,7 @@ function switchTab(tab) {
   const sf=tab==='forecast';
   document.querySelector('main').style.display=sf?'':'none';
   // Hide/show forecast-only elements
-  ['conditionsBanner','windStrip','aiSummaryBar','spotWatchers','spotSocialWidget',
+  ['conditionsBanner','aiSummaryBar','spotWatchers','spotSocialWidget',
    'offlineBadge','installBanner','dataSrcBadge'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display=sf?'':'none';
   });
@@ -4678,7 +4623,7 @@ function renderSessions() {
   const ce=document.getElementById('weekCalendar');
   if(ce&&weekData.length) ce.innerHTML=weekData.map((day,i)=>{
     const cond=getBestCondition(day); const cols={epic:'#00e5a0',good:'#5bc4f5',marginal:'#ff8c42',poor:'#3a6a8a'}; const col=cols[cond.cls]||'#3a6a8a';
-    const wh=day.hours.filter(h=>{const c=getWingCondition(h.wind,h.gust,h.swell,h.dir,currentLocation);return c.cls==='epic'||c.cls==='good';}).length*3;
+    const wh=forecastHours(day).filter(h=>{const c=getWingCondition(h.wind,h.gust,h.swell,h.dir,currentLocation);return c.cls==='epic'||c.cls==='good';}).length*3;
     return '<div onclick="switchTab(\'forecast\');selectDay('+i+')" style="text-align:center;cursor:pointer;border-radius:8px;padding:7px 2px;background:'+col+'18;border:1px solid '+col+'35;">'+
       '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:9px;color:var(--text-muted);">'+dayName(day.date,i)+'</div>'+
       '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:17px;color:'+col+';">'+day.date.getDate()+'</div>'+
@@ -4754,10 +4699,14 @@ async function loadAISummary() {
     return { h, c, score: c.cls==='epic'?4 : c.cls==='good'?3 : c.cls==='marginal'?1 : 0 };
   });
 
-  // Score only DAYLIGHT hours for session recommendations
-  const scored = allScored.filter(s => s.h.hour >= sunriseHour && s.h.hour <= sunsetHour);
+  // Use the more restrictive of sunrise/sunset vs user's forecast window
+  const winStart = Math.max(profile.forecastStartHour ?? 7, sunriseHour);
+  const winEnd   = Math.min(profile.forecastEndHour   ?? 20, sunsetHour);
 
-  // Use daylight hours for session windows, all hours for offshore warnings
+  // Score only hours within the riding window
+  const scored = allScored.filter(s => s.h.hour >= winStart && s.h.hour <= winEnd);
+
+  // Use window hours for session recommendations, all hours for offshore warnings
   const epicHours   = scored.filter(s => s.score === 4);
   const goodHours   = scored.filter(s => s.score >= 3);
   const offshoreHrs = allScored.filter(s => s.c.danger);
@@ -4880,6 +4829,8 @@ async function submitFeedback() {
   if (btn) { btn.textContent = 'SEND FEEDBACK'; btn.disabled = false; }
 }
 if(profile.unit) windUnit=profile.unit;
+if(profile.forecastStartHour == null) profile.forecastStartHour = 7;
+if(profile.forecastEndHour   == null) profile.forecastEndHour   = 20;
 rebuildWingRecs();
 
 // Load user's custom locations into LOCATIONS
@@ -5008,9 +4959,6 @@ init().then(() => setTimeout(checkFirstRun, 800)).catch(() => setTimeout(checkFi
 
 // Auto-refresh every 15 minutes
 setInterval(() => { init(); }, 15 * 60 * 1000);
-
-// Re-render wind strip on resize (keeps canvas crisp on orientation change)
-window.addEventListener('resize', () => { if (weekData.length) renderWindStrip(); });
 
 // After auth resolves, refresh FCM token in Firestore so Cloud Function has latest prefs
 setTimeout(async () => {
