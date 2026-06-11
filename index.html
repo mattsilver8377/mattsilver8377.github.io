@@ -5052,7 +5052,7 @@ function renderWindStrip() {
     // Offshore marker — red stripe ON TOP of the wind bar (not top of canvas)
     if (getDirType(h.dir, currentLocation) === 'offshore' && h.wind >= 8) {
       ctx.fillStyle = '#ff3b5c';
-      ctx.fillRect(x, barY, slotW - 0.5, 3);
+      ctx.fillRect(x, barY, slotW - 0.5, 1);
     }
   });
 }
