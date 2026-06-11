@@ -916,6 +916,12 @@
 
 <div id="conditionsBanner"></div>
 
+<!-- 10-day wind strip -->
+<div id="windStrip" style="margin:0 16px 12px;background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;overflow:hidden;">
+  <div style="padding:6px 12px 2px;font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--text-muted);letter-spacing:2px;">FORECAST AT A GLANCE — TAP A DAY</div>
+  <canvas id="windStripCanvas" style="display:block;width:100%;height:52px;cursor:pointer;" onclick="windStripTap(event)"></canvas>
+</div>
+
 <!-- AI Daily Summary -->
 <div id="aiSummaryBar" style="display:none;margin:0 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(91,196,245,0.04));border:1px solid rgba(0,229,160,0.2);border-radius:10px;">
   <div style="display:flex;align-items:flex-start;gap:10px;">
@@ -2322,6 +2328,7 @@ function changeLocation() {
 function renderAll() {
   renderDate();
   renderBanner();
+  renderWindStrip();
   renderStats();
   renderDayTabs();
   renderForecastTable();
@@ -2757,6 +2764,7 @@ function selectDay(i) {
   if (mapAnimating) toggleMapAnimation();
   renderStats();
   renderDayTabs();
+  renderWindStrip();
   renderForecastTable();
   renderTideChart();
   // Update map particles and markers for newly selected day
@@ -4509,7 +4517,7 @@ function switchTab(tab) {
   const sf=tab==='forecast';
   document.querySelector('main').style.display=sf?'':'none';
   // Hide/show forecast-only elements
-  ['conditionsBanner','aiSummaryBar','spotWatchers','spotSocialWidget',
+  ['conditionsBanner','windStrip','aiSummaryBar','spotWatchers','spotSocialWidget',
    'offlineBadge','installBanner','dataSrcBadge'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display=sf?'':'none';
   });
@@ -4956,6 +4964,123 @@ function checkFirstRun() {
 }
 
 init().then(() => setTimeout(checkFirstRun, 800)).catch(() => setTimeout(checkFirstRun, 800));
+
+
+// ==================== 10-DAY WIND STRIP ====================
+function renderWindStrip() {
+  const canvas = document.getElementById('windStripCanvas');
+  if (!canvas || !weekData.length) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 360;
+  const H = 52;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const days = weekData;
+  const nDays = days.length;
+  const labelH = 16;
+  const barTop = labelH + 2;
+  const barH = H - barTop - 2;
+
+  function stripColor(kts) {
+    if (kts <  8) return '#1a3a5c';
+    if (kts < 12) return '#2176ae';
+    if (kts < 16) return '#00c896';
+    if (kts < 22) return '#00e5a0';
+    if (kts < 28) return '#f7c948';
+    if (kts < 35) return '#ff8c42';
+    return '#ff3b5c';
+  }
+
+  const start = profile.forecastStartHour ?? 7;
+  const end   = profile.forecastEndHour   ?? 20;
+
+  // Collect all slots across all days
+  const allSlots = [];
+  days.forEach((day, di) => {
+    const hours = (day.hours || []).filter(h => h.hour >= start && h.hour <= end);
+    hours.forEach(h => allSlots.push({ di, day, h }));
+  });
+
+  const totalSlots = allSlots.length;
+  if (!totalSlots) return;
+  const slotW = W / totalSlots;
+
+  // Draw background per day
+  let dayStart = 0;
+  days.forEach((day, di) => {
+    const hours = (day.hours || []).filter(h => h.hour >= start && h.hour <= end);
+    const dayPxW = hours.length * slotW;
+    ctx.fillStyle = di === selectedDay ? 'rgba(0,229,160,0.14)' : (di % 2 === 0 ? 'rgba(7,30,56,0.7)' : 'rgba(4,13,26,0.7)');
+    ctx.fillRect(dayStart, 0, dayPxW, H);
+    // Selected day top bar
+    if (di === selectedDay) {
+      ctx.fillStyle = '#00e5a0';
+      ctx.fillRect(dayStart, 0, dayPxW, 2);
+    }
+    // Day label
+    const label = di === 0 ? 'Today' : day.date.toLocaleDateString('en-GB', { weekday: 'short' });
+    ctx.font = (di === selectedDay ? 'bold ' : '') + '10px Barlow Condensed, sans-serif';
+    ctx.fillStyle = di === selectedDay ? '#00e5a0' : '#7ab3d4';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, dayStart + dayPxW / 2, labelH / 2);
+    // Day divider
+    if (di > 0) {
+      ctx.strokeStyle = 'rgba(91,196,245,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(dayStart, 0); ctx.lineTo(dayStart, H); ctx.stroke();
+    }
+    dayStart += dayPxW;
+  });
+
+  // Draw wind bars and offshore markers
+  allSlots.forEach(({ di, day, h }, si) => {
+    const x = si * slotW;
+    const pct = Math.min(h.wind / 35, 1);
+    const bH  = Math.max(2, Math.round(pct * barH));
+    const barY = barTop + (barH - bH);
+
+    // Wind bar
+    ctx.fillStyle = stripColor(h.wind);
+    ctx.fillRect(x, barY, slotW - 0.5, bH);
+
+    // Offshore marker — red stripe ON TOP of the wind bar (not top of canvas)
+    if (getDirType(h.dir, currentLocation) === 'offshore' && h.wind >= 8) {
+      ctx.fillStyle = '#ff3b5c';
+      ctx.fillRect(x, barY, slotW - 0.5, 3);
+    }
+  });
+}
+
+function windStripTap(e) {
+  const canvas = document.getElementById('windStripCanvas');
+  if (!canvas || !weekData.length) return;
+  const rect = canvas.getBoundingClientRect();
+  const tapX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const start = profile.forecastStartHour ?? 7;
+  const end   = profile.forecastEndHour   ?? 20;
+  const totalSlots = weekData.reduce((a, d) => a + (d.hours||[]).filter(h=>h.hour>=start&&h.hour<=end).length, 0);
+  if (!totalSlots) return;
+  const slotW = rect.width / totalSlots;
+  const slotIdx = Math.floor(tapX / slotW);
+  let cumulative = 0;
+  for (let di = 0; di < weekData.length; di++) {
+    const slots = (weekData[di].hours||[]).filter(h=>h.hour>=start&&h.hour<=end).length;
+    cumulative += slots;
+    if (slotIdx < cumulative) {
+      if (!wcUserPro && di >= FREE_DAY_LIMIT) { openProModal(); return; }
+      selectDay(di);
+      return;
+    }
+  }
+}
+
+window.addEventListener('resize', () => { if (weekData.length) renderWindStrip(); });
 
 // Auto-refresh every 15 minutes
 setInterval(() => { init(); }, 15 * 60 * 1000);
